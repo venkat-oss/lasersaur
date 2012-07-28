@@ -153,7 +153,7 @@ void gcode_process_line() {
       printString("\n");
       status_code = STATUS_OK;
     } else {
-      // process gcode
+      // process the next line of G-code
       status_code = gcode_execute_line(rx_line);
     }    
   } else { 
@@ -161,7 +161,7 @@ void gcode_process_line() {
     status_code = STATUS_OK;
   }
   
-  //// return status
+  //// return error status
   if (status_code == STATUS_OK) {
     printPgmString(PSTR("ok\n"));
   } else {
@@ -174,18 +174,29 @@ void gcode_process_line() {
         printPgmString(PSTR("Error: Unsupported statement\n")); break;
       case STATUS_FLOATING_POINT_ERROR:
         printPgmString(PSTR("Error: Floating point error\n")); break;
-      case STATUS_STOP_POWER_OFF:
+      case STATUS_POWER_OFF:
         printPgmString(PSTR("Error: Power Off\n")); break;
-      case STATUS_STOP_CHILLER_OFF:
-        printPgmString(PSTR("Error: Chiller Off\n")); break;
-      case STATUS_STOP_LIMIT_HIT:
+      case STATUS_LIMIT_HIT:
         printPgmString(PSTR("Error: Limit Hit\n")); break;                    
       default:
         printPgmString(PSTR("Error: "));
         printInteger(status_code);
         printPgmString(PSTR("\n"));        
     }
-  }   
+  }
+
+  //// return warnings
+  if (stepper_warning_requested()) {
+    switch(stepper_warning_status()) {
+      case STATUS_DOOR_OPEN:
+        printPgmString(PSTR("W:D\n")); break;  // Warning: Door is open
+      case STATUS_CHILLER_OFF:
+        printPgmString(PSTR("W:C\n")); break;  // Warning: Chiller is off
+      default:
+        printPgmString(PSTR("W:U\n"));         // Warning: Unknown
+    }
+    stepper_warning_handled();
+  }
 }
 
 

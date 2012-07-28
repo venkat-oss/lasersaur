@@ -75,7 +75,9 @@ static uint32_t acceleration_tick_counter;    // The cycles since last accelerat
 static uint32_t adjusted_rate;                // The current rate of step_events according to the speed profile
 static bool processing_flag;                  // indicates if blocks are being processed
 static volatile bool stop_requested;          // when set to true stepper interrupt will go idle on next entry
+static volatile bool warning_requested;       // request a warning to be sent to the user interface
 static volatile uint8_t stop_status;          // yields the reason for a stop request
+static volatile uint8_t warning_status;       // yields the reason for a warning request
 
 
 // prototypes for static functions (non-accesible from other files)
@@ -111,7 +113,9 @@ void stepper_init() {
   acceleration_tick_counter = 0;
   current_block = NULL;
   stop_requested = false;
+  warning_requested = false;
   stop_status = STATUS_OK;
+  warning_status = STATUS_OK;
   busy = false;
   
   // start in the idle state
@@ -149,23 +153,43 @@ void stepper_go_idle() {
   control_laser_intensity(0);
 }
 
-// stop processing command blocks, absorb serial data
+// stop event handling
 void stepper_request_stop(uint8_t status) {
   stop_status = status;
   stop_requested = true;
-}
-
-bool stepper_stop_requested() {
-  return stop_requested;
 }
 
 uint8_t stepper_stop_status() {
   return stop_status;
 }
 
-void stepper_resume() {
+bool stepper_stop_requested() {
+  return stop_requested;
+}
+
+void stepper_stop_resume() {
   stop_requested = false;
 }
+
+// warning event handling
+void stepper_request_warning(uint8_t status) {
+  warning_status = status;
+  warning_requested = true;
+}
+
+uint8_t stepper_warning_status() {
+  return warning_status;
+}
+
+bool stepper_warning_requested() {
+  return warning_requested;
+}
+
+void stepper_warning_handled() {
+  warning_requested = false;
+}
+
+
 
 
 
@@ -215,22 +239,22 @@ ISR(TIMER1_COMPA_vect) {
     busy = false;
     return;
   }
-  
-  if (SENSE_ANY) {
-    // stop/pause program
-    if (SENSE_LIMITS) {
-      stepper_request_stop(STATUS_STOP_LIMIT_HIT);
-    } else if (SENSE_CHILLER_OFF) {
-      stepper_request_stop(STATUS_STOP_CHILLER_OFF);
-    } else if (SENSE_POWER_OFF) {
-      stepper_request_stop(STATUS_STOP_POWER_OFF);
-    } else if(SENSE_DOOR_OPEN) {
-      // no stop request
-      // simply suspend processing
-    }
+
+  // stop program when any limit is hit or the e-stop turned the power off
+  // continue program when door is opened or chiller off but post warning
+  if (SENSE_LIMITS) {
+    stepper_request_stop(STATUS_LIMIT_HIT);
     busy = false;
     return;    
-  }
+  } else if (SENSE_POWER_OFF) {
+    stepper_request_stop(STATUS_POWER_OFF);
+    busy = false;
+    return;    
+  } else if (SENSE_DOOR_OPEN) {
+    stepper_request_warning(STATUS_DOOR_OPEN);
+  } else if (SENSE_CHILLER_OFF) {
+    stepper_request_warning(STATUS_CHILLER_OFF);
+  }  
 
   
   // pulse steppers

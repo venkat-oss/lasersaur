@@ -42,12 +42,17 @@ void stepper_wake_up();
 // make the stepper subsystem fall asleep
 void stepper_go_idle();
 
-// makes sure steppers are forced stepper_go_idle()
-// at the beginning of the stepper interrupt
+// stop (error) functions
 void stepper_request_stop(uint8_t status);
-bool stepper_stop_requested();
 uint8_t stepper_stop_status();
-void stepper_resume();
+bool stepper_stop_requested();
+void stepper_stop_resume();
+
+// warning function
+void stepper_request_warning(uint8_t status);
+uint8_t stepper_warning_status();
+bool stepper_warning_requested();
+void stepper_warning_handled();
 
 // Get the actual position of the head in mm.
 // This is as accurate as an open loop system can be.

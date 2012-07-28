@@ -148,10 +148,10 @@ SIGNAL(USART_RX_vect) {
 	uint8_t data = UDR0;
 	if (data == CHAR_STOP) {
 	  // special stop character, bypass buffer
-    stepper_request_stop(STATUS_STOP_SERIAL_REQUEST);
+    stepper_request_stop(STATUS_SERIAL_STOP_REQUEST);
 	} else if (data == CHAR_RESUME) {
 	  // special resume character, bypass buffer
-    stepper_resume();
+    stepper_stop_resume();
 	} else {
   	uint8_t next_head = rx_buffer_head + 1;
   	if (next_head == RX_BUFFER_SIZE) { next_head = 0; }

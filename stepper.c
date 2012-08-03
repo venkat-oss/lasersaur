@@ -241,7 +241,6 @@ ISR(TIMER1_COMPA_vect) {
   }
 
   // stop program when any limit is hit or the e-stop turned the power off
-  // continue program when door is opened or chiller off but post warning
   if (SENSE_LIMITS) {
     stepper_request_stop(STATUS_LIMIT_HIT);
     busy = false;
@@ -250,11 +249,7 @@ ISR(TIMER1_COMPA_vect) {
     stepper_request_stop(STATUS_POWER_OFF);
     busy = false;
     return;    
-  } else if (SENSE_DOOR_OPEN) {
-    stepper_request_warning(STATUS_DOOR_OPEN);
-  } else if (SENSE_CHILLER_OFF) {
-    stepper_request_warning(STATUS_CHILLER_OFF);
-  }  
+  }
 
   
   // pulse steppers

@@ -185,18 +185,12 @@ void gcode_process_line() {
     }
   }
 
-  //// return warnings
-  if (stepper_warning_requested()) {
-    switch(stepper_warning_status()) {
-      case STATUS_DOOR_OPEN:
-        printPgmString(PSTR("W:D\n")); break;  // Warning: Door is open
-      case STATUS_CHILLER_OFF:
-        printPgmString(PSTR("W:C\n")); break;  // Warning: Chiller is off
-      default:
-        printPgmString(PSTR("W:U\n"));         // Warning: Unknown
-    }
-    stepper_warning_handled();
-  }
+  // get door and chiller status
+  if (SENSE_DOOR_OPEN) {
+    printPgmString(PSTR("S:D\n"));  // Warning: Door is open
+  } else if (SENSE_CHILLER_OFF) {
+    printPgmString(PSTR("S:C\n"));  // Warning: Chiller is off
+  } 
 }
 
 

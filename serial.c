@@ -31,7 +31,7 @@
 
 
 #define RX_BUFFER_SIZE 192
-#define TX_BUFFER_SIZE 32
+#define TX_BUFFER_SIZE 64
 
 uint8_t rx_buffer[RX_BUFFER_SIZE];
 uint8_t rx_buffer_head = 0;

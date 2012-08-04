@@ -143,14 +143,9 @@ void gcode_process_line() {
       status_code = stepper_stop_status();
     } else if (rx_line[0] == '$') {
       printPgmString(PSTR("\nLasaurGrbl " LASAURGRBL_VERSION));
-      printPgmString(PSTR("\nSee config.h for configuration.\n"));
       status_code = STATUS_OK;
     } else if (rx_line[0] == '?') {
-      printString("X");
-      printFloat(stepper_get_position_x());
-      printString(" Y");
-      printFloat(stepper_get_position_y());
-      printString("\n");
+      // trigger a status line
       status_code = STATUS_OK;
     } else {
       // process the next line of G-code
@@ -162,35 +157,42 @@ void gcode_process_line() {
   }
   
   //// return error status
-  if (status_code == STATUS_OK) {
-    printPgmString(PSTR("ok\n"));
-  } else {
+  if (status_code != STATUS_OK) {
     switch(status_code) {      
       case STATUS_BAD_NUMBER_FORMAT:
-        printPgmString(PSTR("Error: Bad number format\n")); break;
+        printString("N1"); break;  // Error: Bad number format
       case STATUS_EXPECTED_COMMAND_LETTER:
-        printPgmString(PSTR("Error: Expected command letter\n")); break;
+        printString("E1"); break;  // Error: Expected command letter
       case STATUS_UNSUPPORTED_STATEMENT:
-        printPgmString(PSTR("Error: Unsupported statement\n")); break;
+        printString("U1"); break;  // Error: Unsupported statement
       case STATUS_FLOATING_POINT_ERROR:
-        printPgmString(PSTR("Error: Floating point error\n")); break;
+        printString("F1"); break;  // Error: Floating point error
       case STATUS_POWER_OFF:
-        printPgmString(PSTR("Error: Power Off\n")); break;
+        printString("P1"); break;  // Error: Power Off
       case STATUS_LIMIT_HIT:
-        printPgmString(PSTR("Error: Limit Hit\n")); break;                    
+        printString("L1"); break;  // Error: Limit Hit
       default:
-        printPgmString(PSTR("Error: "));
+        printPgmString(PSTR("ERROR"));
         printInteger(status_code);
-        printPgmString(PSTR("\n"));        
     }
   }
 
-  // get door and chiller status
+  //// compile and send status to serial
   if (SENSE_DOOR_OPEN) {
-    printPgmString(PSTR("S:D\n"));  // Warning: Door is open
-  } else if (SENSE_CHILLER_OFF) {
-    printPgmString(PSTR("S:C\n"));  // Warning: Chiller is off
+    printString("D1");
+  } else {
+    printString("D0");  // Warning: Door is open
   } 
+  if (SENSE_CHILLER_OFF) {
+    printString("C1");  // Warning: Chiller is off
+  } else {
+    printString("C0");
+  }  
+  // printString("X");
+  // printFloat(stepper_get_position_x());
+  // printString("Y");
+  // printFloat(stepper_get_position_y());
+  printString("\n");
 }
 
 
@@ -430,6 +432,11 @@ static int read_double(char *line, uint8_t *char_counter, double *double_ptr) {
   *char_counter = end - line;
   return(true);
 }
+
+
+
+
+
 
 /* 
   Intentionally not supported:

@@ -25,7 +25,7 @@
 
 // Version number
 // (must not contain capital letters)
-#define LASAURGRBL_VERSION "12.02i"
+#define LASAURGRBL_VERSION "12.08"
 #define BAUD_RATE 9600
 
 

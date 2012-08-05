@@ -101,6 +101,7 @@ void gcode_process_line() {
   int numChars = 0;
   uint8_t iscomment = false;
   int status_code;
+  int line_processed = false;
     
   while ((numChars==0) || (chr != '\n')) {
     chr = serial_read();
@@ -140,59 +141,78 @@ void gcode_process_line() {
     }
     
     if (stepper_stop_requested()) {
+      printString("!");  // report harware is in stop mode
       status_code = stepper_stop_status();
-    } else if (rx_line[0] == '$') {
-      printPgmString(PSTR("\nLasaurGrbl " LASAURGRBL_VERSION));
-      status_code = STATUS_OK;
-    } else if (rx_line[0] == '?') {
-      // trigger a status line
-      status_code = STATUS_OK;
-    } else {
+      // report stop conditions
+      if ( status_code == STATUS_POWER_OFF) {
+        printString("P");  // Stop: Power Off
+      } else if (status_code == STATUS_LIMIT_HIT) {
+        printString("L");  // Stop: Limit Hit
+      } else if (status_code == STATUS_SERIAL_STOP_REQUEST) {
+        printString("R");  // Stop: Serial Request   
+      } else {
+        printString("O");  // Stop: Other error
+        printInteger(status_code);        
+      }
+    } else if (rx_line[0] != '?') {
       // process the next line of G-code
       status_code = gcode_execute_line(rx_line);
-    }    
-  } else { 
-    // empty or comment line, send ok for consistency
-    status_code = STATUS_OK;
-  }
-  
-  //// return error status
-  if (status_code != STATUS_OK) {
-    switch(status_code) {      
-      case STATUS_BAD_NUMBER_FORMAT:
-        printString("N1"); break;  // Error: Bad number format
-      case STATUS_EXPECTED_COMMAND_LETTER:
-        printString("E1"); break;  // Error: Expected command letter
-      case STATUS_UNSUPPORTED_STATEMENT:
-        printString("U1"); break;  // Error: Unsupported statement
-      case STATUS_FLOATING_POINT_ERROR:
-        printString("F1"); break;  // Error: Floating point error
-      case STATUS_POWER_OFF:
-        printString("P1"); break;  // Error: Power Off
-      case STATUS_LIMIT_HIT:
-        printString("L1"); break;  // Error: Limit Hit
-      default:
-        printPgmString(PSTR("ERROR"));
-        printInteger(status_code);
+      line_processed = true;
+      // report parse errors
+      if (status_code == STATUS_OK) {
+        // pass
+      } else if (status_code == STATUS_BAD_NUMBER_FORMAT) {
+        printString("N");  // Warning: Bad number format
+      } else if (status_code == STATUS_EXPECTED_COMMAND_LETTER) {
+        printString("E");  // Warning: Expected command letter
+      } else if (status_code == STATUS_UNSUPPORTED_STATEMENT) {
+        printString("U");  // Warning: Unsupported statement   
+      } else {
+        printString("W");  // Warning: Other error
+        printInteger(status_code);        
+      }      
     }
+
+    //// door and chiller status
+    if (SENSE_DOOR_OPEN) {
+      printString("D");  // Warning: Door is open
+    }
+    if (SENSE_CHILLER_OFF) {
+      printString("C");  // Warning: Chiller is off
+    }
+    // power
+    if (SENSE_POWER_OFF) {
+      printString("P");  // Power Off
+    }    
+    // limit
+    if (SENSE_LIMITS) {
+      if (SENSE_X1_LIMIT) {
+        printString("L1");  // Limit X1 Hit
+      }
+      if (SENSE_X2_LIMIT) {
+        printString("L2");  // Limit X2 Hit
+      }
+      if (SENSE_Y1_LIMIT) {
+        printString("L3");  // Limit Y1 Hit
+      }
+      if (SENSE_Y2_LIMIT) {
+        printString("L4");  // Limit Y21 Hit
+      }
+    } 
+
+    //
+    if (!line_processed) {   
+      // position
+      printString("X");
+      printFloat(stepper_get_position_x());
+      printString("Y");
+      printFloat(stepper_get_position_y());       
+      // version
+      printPgmString(PSTR("V" LASAURGRBL_VERSION));
+    }
+    printString("\n");
   }
 
-  //// compile and send status to serial
-  if (SENSE_DOOR_OPEN) {
-    printString("D1");
-  } else {
-    printString("D0");  // Warning: Door is open
-  } 
-  if (SENSE_CHILLER_OFF) {
-    printString("C1");  // Warning: Chiller is off
-  } else {
-    printString("C0");
-  }  
-  // printString("X");
-  // printFloat(stepper_get_position_x());
-  // printString("Y");
-  // printFloat(stepper_get_position_y());
-  printString("\n");
 }
 
 

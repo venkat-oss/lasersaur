@@ -23,8 +23,9 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-
-#define LASAURGRBL_VERSION "v12.02i"
+// Version number
+// (must not contain capital letters)
+#define LASAURGRBL_VERSION "12.02i"
 #define BAUD_RATE 9600
 
 

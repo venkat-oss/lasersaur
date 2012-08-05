@@ -72,8 +72,8 @@ void serial_init() {
 	xon_flag = 1;
 	UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt
 	
-  printPgmString(PSTR("\r\nLasaurGrbl " LASAURGRBL_VERSION));
-  printPgmString(PSTR("\r\n")); 	
+  printPgmString(PSTR("LasaurGrbl " LASAURGRBL_VERSION));
+  printPgmString(PSTR("\n")); 	
 }
 
 void serial_write(uint8_t data) {

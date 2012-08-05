@@ -75,9 +75,7 @@ static uint32_t acceleration_tick_counter;    // The cycles since last accelerat
 static uint32_t adjusted_rate;                // The current rate of step_events according to the speed profile
 static bool processing_flag;                  // indicates if blocks are being processed
 static volatile bool stop_requested;          // when set to true stepper interrupt will go idle on next entry
-static volatile bool warning_requested;       // request a warning to be sent to the user interface
 static volatile uint8_t stop_status;          // yields the reason for a stop request
-static volatile uint8_t warning_status;       // yields the reason for a warning request
 
 
 // prototypes for static functions (non-accesible from other files)
@@ -113,9 +111,7 @@ void stepper_init() {
   acceleration_tick_counter = 0;
   current_block = NULL;
   stop_requested = false;
-  warning_requested = false;
   stop_status = STATUS_OK;
-  warning_status = STATUS_OK;
   busy = false;
   
   // start in the idle state
@@ -170,25 +166,6 @@ bool stepper_stop_requested() {
 void stepper_stop_resume() {
   stop_requested = false;
 }
-
-// warning event handling
-void stepper_request_warning(uint8_t status) {
-  warning_status = status;
-  warning_requested = true;
-}
-
-uint8_t stepper_warning_status() {
-  return warning_status;
-}
-
-bool stepper_warning_requested() {
-  return warning_requested;
-}
-
-void stepper_warning_handled() {
-  warning_requested = false;
-}
-
 
 
 

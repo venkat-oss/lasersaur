@@ -65,7 +65,7 @@ GUESS_PPREFIX = "tty.usbmodem"
 def build():
     DEVICE = "atmega328p"
     CLOCK = "16000000"
-    PROGRAMMER = "avrisp"    # use this for bootloader
+    PROGRAMMER = "arduino"    # use this for bootloader
     # PROGRAMMER = "usbtiny"    # use this for programmer
     BITRATE = "115200"
 
@@ -85,7 +85,9 @@ def build():
 
     os.system('%(size)s *.hex *.elf *.o' % {'size':AVRSIZEAPP})
 
-    os.system('%(dude)s -c %(programmer)s -b %(bps)s -P %(port)s -p %(device)s -C %(dudeconf)s -B 10 -F -U flash:w:%(product)s.hex:i' % {'dude':AVRDUDEAPP, 'programmer':PROGRAMMER, 'bps':BITRATE, 'port':SERIAL_PORT, 'device':DEVICE, 'dudeconf':AVRDUDECONFIG, 'product':BUILDNAME})
+    os.system('%(dude)s -c %(programmer)s -b %(bps)s -P %(port)s -p %(device)s -C %(dudeconf)s -D -Uflash:w:%(product)s.hex:i' % {'dude':AVRDUDEAPP, 'programmer':PROGRAMMER, 'bps':BITRATE, 'port':SERIAL_PORT, 'device':DEVICE, 'dudeconf':AVRDUDECONFIG, 'product':BUILDNAME})
+    # os.system('%(dude)s -c %(programmer)s -b %(bps)s -P %(port)s -p %(device)s -C %(dudeconf)s -B 10 -F -U flash:w:%(product)s.hex:i' % {'dude':AVRDUDEAPP, 'programmer':PROGRAMMER, 'bps':BITRATE, 'port':SERIAL_PORT, 'device':DEVICE, 'dudeconf':AVRDUDECONFIG, 'product':BUILDNAME})
+
 
     # fuse setting taken over from Makefile for reference
     #os.system('%(dude)s -U hfuse:w:0xd2:m -U lfuse:w:0xff:m' % {'dude':AVRDUDEAPP})

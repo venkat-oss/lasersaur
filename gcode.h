@@ -26,14 +26,15 @@
 #include <avr/pgmspace.h>
 
 #define STATUS_OK 0
-#define STATUS_BAD_NUMBER_FORMAT 1
-#define STATUS_EXPECTED_COMMAND_LETTER 2
-#define STATUS_UNSUPPORTED_STATEMENT 3
-#define STATUS_SERIAL_STOP_REQUEST 4
-#define STATUS_LIMIT_HIT 5
-#define STATUS_POWER_OFF 6
-// #define STATUS_DOOR_OPEN 7
-// #define STATUS_CHILLER_OFF 8
+#define STATUS_BUFFER_OVERFLOW 1
+#define STATUS_BAD_NUMBER_FORMAT 2
+#define STATUS_EXPECTED_COMMAND_LETTER 3
+#define STATUS_UNSUPPORTED_STATEMENT 4
+#define STATUS_SERIAL_STOP_REQUEST 5
+#define STATUS_LIMIT_HIT 6
+#define STATUS_POWER_OFF 7
+// #define STATUS_DOOR_OPEN 8
+// #define STATUS_CHILLER_OFF 9
 
 
 // Initialize the parser
@@ -42,7 +43,9 @@ void gcode_init();
 // read chars from serial
 void gcode_process_line();
 
-// Execute one block of rs275/ngc/g-code
+// Execute one line of rs275/ngc/g-code
+// blocks until a whole line has been received
+// calls sleep_mode() when no serial data is available
 uint8_t gcode_execute_line(char *line);
 
 // update to stepper position when steppers have been stopped

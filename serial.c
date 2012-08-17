@@ -30,21 +30,21 @@
 #include "gcode.h"
 
 
-#define RX_BUFFER_SIZE 192
+#define RX_BUFFER_SIZE 255
 #define TX_BUFFER_SIZE 64
 
 uint8_t rx_buffer[RX_BUFFER_SIZE];
-uint8_t rx_buffer_head = 0;
-uint8_t rx_buffer_tail = 0;
+volatile uint8_t rx_buffer_head = 0;
+volatile uint8_t rx_buffer_tail = 0;
 
-#define RX_MIN_OPEN_SLOTS 32  // when to trigger XONXOFF event
+#define RX_MIN_OPEN_SLOTS 127  // when to trigger XONXOFF event
 volatile uint8_t rx_buffer_open_slots = RX_BUFFER_SIZE;
 volatile uint8_t xoff_flag = 0;
 volatile uint8_t xon_flag = 0;
 volatile uint8_t xon_remote_state = 0;
 
 uint8_t tx_buffer[TX_BUFFER_SIZE];
-uint8_t tx_buffer_head = 0;
+volatile uint8_t tx_buffer_head = 0;
 volatile uint8_t tx_buffer_tail = 0;
 
 static void set_baud_rate(long baud) {
@@ -121,12 +121,13 @@ SIGNAL(USART_UDRE_vect) {
 }
 
 uint8_t serial_read() {
-	if (rx_buffer_head == rx_buffer_tail) {
+	if (rx_buffer_tail == rx_buffer_head) {
 		return SERIAL_NO_DATA;
 	} else {
 		uint8_t data = rx_buffer[rx_buffer_tail];
 		rx_buffer_tail++;
     rx_buffer_open_slots++;
+    if (rx_buffer_tail == RX_BUFFER_SIZE) { rx_buffer_tail = 0; } 
     
     if (xon_remote_state == 0) {  // generate flow control event
       if (rx_buffer_open_slots > RX_MIN_OPEN_SLOTS) {
@@ -134,8 +135,7 @@ uint8_t serial_read() {
       	UCSR0B |=  (1 << UDRIE0);  // Enable Data Register Empty Interrupt      
       }
     }
-    
-		if (rx_buffer_tail == RX_BUFFER_SIZE) { rx_buffer_tail = 0; }		
+  
 		return data;
 	}
 }
@@ -144,31 +144,34 @@ uint8_t serial_available() {
   return RX_BUFFER_SIZE - rx_buffer_open_slots;
 }
 
+// Rx Interrupt, called whenever a new byte is in UDR0
 SIGNAL(USART_RX_vect) {
-	uint8_t data = UDR0;
-	if (data == CHAR_STOP) {
-	  // special stop character, bypass buffer
+  uint8_t data = UDR0;
+  if (data == CHAR_STOP) {
+    // special stop character, bypass buffer
     stepper_request_stop(STATUS_SERIAL_STOP_REQUEST);
-	} else if (data == CHAR_RESUME) {
-	  // special resume character, bypass buffer
+  } else if (data == CHAR_RESUME) {
+    // special resume character, bypass buffer
     stepper_stop_resume();
-	} else {
-  	uint8_t next_head = rx_buffer_head + 1;
-  	if (next_head == RX_BUFFER_SIZE) { next_head = 0; }
+  } else {
+    uint8_t next_head = rx_buffer_head + 1;
+    if (next_head == RX_BUFFER_SIZE) { next_head = 0; }
 
-    // Write data to buffer unless it is full.
-  	if (next_head != rx_buffer_tail) {
-  		rx_buffer[rx_buffer_head] = data;
-  		rx_buffer_head = next_head;
+    if (next_head == rx_buffer_tail) {
+      // buffer is full, other side sent too much data
+      stepper_request_stop(STATUS_BUFFER_OVERFLOW);
+    } else {
+      rx_buffer[rx_buffer_head] = data;
+      rx_buffer_head = next_head;
       rx_buffer_open_slots--;
     
       if (xon_remote_state == 1) {  // generate flow control event
         if (rx_buffer_open_slots <= RX_MIN_OPEN_SLOTS) {
           xoff_flag = 1;
-        	UCSR0B |=  (1 << UDRIE0);  // Enable Data Register Empty Interrupt
+          UCSR0B |=  (1 << UDRIE0);  // Enable Data Register Empty Interrupt
         }
       } 
-  	}
+    }
   }
 }
 

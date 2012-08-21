@@ -217,17 +217,18 @@ ISR(TIMER1_COMPA_vect) {
     return;
   }
 
-  // stop program when any limit is hit or the e-stop turned the power off
-  if (SENSE_LIMITS) {
-    stepper_request_stop(STATUS_LIMIT_HIT);
-    busy = false;
-    return;    
-  } else if (SENSE_POWER_OFF) {
-    stepper_request_stop(STATUS_POWER_OFF);
-    busy = false;
-    return;    
-  }
-
+  #ifndef DEBUG_IGNORE_SENSORS
+    // stop program when any limit is hit or the e-stop turned the power off
+    if (SENSE_LIMITS) {
+      stepper_request_stop(STATUS_LIMIT_HIT);
+      busy = false;
+      return;    
+    } else if (SENSE_POWER_OFF) {
+      stepper_request_stop(STATUS_POWER_OFF);
+      busy = false;
+      return;    
+    }
+  #endif
   
   // pulse steppers
   STEPPING_PORT = (STEPPING_PORT & ~DIRECTION_MASK) | (out_bits & DIRECTION_MASK);
@@ -236,9 +237,10 @@ ISR(TIMER1_COMPA_vect) {
   TCNT2 = -(((CONFIG_PULSE_MICROSECONDS-2)*CYCLES_PER_MICROSECOND) >> 3); // Reload timer counter
   TCCR2B = (1<<CS21); // Begin timer2. Full speed, 1/8 prescaler
 
-  // Re-enable interrupts to allow ISR_TIMER2_OVERFLOW to trigger on-time and allow serial communications
-  // regardless of time in this handler. The following code prepares the stepper driver for the next
-  // step interrupt compare and will always finish before returning to the main program.
+  // Enable nested interrupts.
+  // By default nested interrupts are disabled but can be enabled with sei()
+  // This allows the reset interrupt and serial ISRs to jump in.
+  // See: http://avr-libc.nongnu.org/user-manual/group__avr__interrupts.html
   sei();
 
   // If there is no current block, attempt to pop one from the buffer

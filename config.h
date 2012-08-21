@@ -26,7 +26,8 @@
 // Version number
 // (must not contain capital letters)
 #define LASAURGRBL_VERSION "12.08b"
-#define BAUD_RATE 4800
+#define BAUD_RATE 9600
+#define DEBUG_IGNORE_SENSORS  // set for debugging
 
 
 #define CONFIG_X_STEPS_PER_MM 32.80839895 //microsteps/mm
@@ -122,10 +123,8 @@
 #define MINIMUM_STEPS_PER_MINUTE 1600U // (steps/min) - Integer value only
 // 1600 @ 32step_per_mm = 50mm/min
 
-// #define CHAR_XOFF   '\x13'
-// #define CHAR_XON    '\x11'
-#define CHAR_XOFF   '<'
-#define CHAR_XON    '>'
+#define CHAR_XOFF   '\x13'
+#define CHAR_XON    '\x11'
 #define CHAR_STOP   '!'
 #define CHAR_RESUME '~'
 

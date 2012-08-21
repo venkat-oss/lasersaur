@@ -100,7 +100,7 @@ void gcode_process_line() {
   char chr = '\0';
   int numChars = 0;
   uint8_t iscomment = false;
-  int status_code;
+  int status_code = STATUS_OK;
   int line_processed = false;
     
   while ((numChars==0) || (chr != '\n')) {
@@ -182,32 +182,34 @@ void gcode_process_line() {
       }      
     }
 
-    //// door and chiller status
-    if (SENSE_DOOR_OPEN) {
-      printString("D");  // Warning: Door is open
-    }
-    if (SENSE_CHILLER_OFF) {
-      printString("C");  // Warning: Chiller is off
-    }
-    // power
-    if (SENSE_POWER_OFF) {
-      printString("P");  // Power Off
-    }    
-    // limit
-    if (SENSE_LIMITS) {
-      if (SENSE_X1_LIMIT) {
-        printString("L1");  // Limit X1 Hit
+    #ifndef DEBUG_IGNORE_SENSORS
+      //// door and chiller status
+      if (SENSE_DOOR_OPEN) {
+        printString("D");  // Warning: Door is open
       }
-      if (SENSE_X2_LIMIT) {
-        printString("L2");  // Limit X2 Hit
+      if (SENSE_CHILLER_OFF) {
+        printString("C");  // Warning: Chiller is off
       }
-      if (SENSE_Y1_LIMIT) {
-        printString("L3");  // Limit Y1 Hit
-      }
-      if (SENSE_Y2_LIMIT) {
-        printString("L4");  // Limit Y21 Hit
-      }
-    } 
+      // power
+      if (SENSE_POWER_OFF) {
+        printString("P");  // Power Off
+      }    
+      // limit
+      if (SENSE_LIMITS) {
+        if (SENSE_X1_LIMIT) {
+          printString("L1");  // Limit X1 Hit
+        }
+        if (SENSE_X2_LIMIT) {
+          printString("L2");  // Limit X2 Hit
+        }
+        if (SENSE_Y1_LIMIT) {
+          printString("L3");  // Limit Y1 Hit
+        }
+        if (SENSE_Y2_LIMIT) {
+          printString("L4");  // Limit Y21 Hit
+        }
+      } 
+    #endif
 
     //
     if (!line_processed) {   

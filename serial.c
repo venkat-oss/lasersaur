@@ -37,7 +37,7 @@ uint8_t rx_buffer[RX_BUFFER_SIZE];
 volatile uint8_t rx_buffer_head = 0;
 volatile uint8_t rx_buffer_tail = 0;
 
-#define RX_MIN_OPEN_SLOTS 127  // when to trigger XONXOFF event
+#define RX_MIN_OPEN_SLOTS 64  // when to trigger XONXOFF event
 volatile uint8_t rx_buffer_open_slots = RX_BUFFER_SIZE;
 volatile uint8_t xoff_flag = 0;
 volatile uint8_t xon_flag = 0;
@@ -159,7 +159,7 @@ SIGNAL(USART_RX_vect) {
 
     if (next_head == rx_buffer_tail) {
       // buffer is full, other side sent too much data
-      stepper_request_stop(STATUS_BUFFER_OVERFLOW);
+      stepper_request_stop(STATUS_RX_BUFFER_OVERFLOW);
     } else {
       rx_buffer[rx_buffer_head] = data;
       rx_buffer_head = next_head;

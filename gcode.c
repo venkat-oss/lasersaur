@@ -118,7 +118,7 @@ void gcode_process_line() {
         sleep_mode();
     } else if (numChars + 1 >= BUFFER_LINE_SIZE) {  // +1 for \0
       // reached line size, other side sent too long lines
-      stepper_request_stop(STATUS_BUFFER_OVERFLOW);
+      stepper_request_stop(STATUS_LINE_BUFFER_OVERFLOW);
       break;
     } else {
       // process the current char; gcode-specific
@@ -156,8 +156,10 @@ void gcode_process_line() {
         printString("L");  // Stop: Limit Hit
       } else if (status_code == STATUS_SERIAL_STOP_REQUEST) {
         printString("R");  // Stop: Serial Request   
-      } else if (status_code == STATUS_BUFFER_OVERFLOW) {
-        printString("B");  // Stop: Buffer Overflow  
+      } else if (status_code == STATUS_RX_BUFFER_OVERFLOW) {
+        printString("B");  // Stop: Rx Buffer Overflow  
+      } else if (status_code == STATUS_LINE_BUFFER_OVERFLOW) {
+        printString("I");  // Stop: Line Buffer Overflow  
       } else {
         printString("O");  // Stop: Other error
         printInteger(status_code);        

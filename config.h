@@ -27,7 +27,7 @@
 // (must not contain capital letters)
 #define LASAURGRBL_VERSION "12.08d"
 #define BAUD_RATE 9600
-#define DEBUG_IGNORE_SENSORS  // set for debugging
+// #define DEBUG_IGNORE_SENSORS  // set for debugging
 
 
 #define CONFIG_X_STEPS_PER_MM 32.80839895 //microsteps/mm

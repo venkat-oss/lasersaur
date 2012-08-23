@@ -31,14 +31,14 @@
 
 // changing rxbuffer from 128 to 255
 // and open slots from 32 to 64 made firmware crash
-#define RX_BUFFER_SIZE 128
+#define RX_BUFFER_SIZE 192
 #define TX_BUFFER_SIZE 128
 
 uint8_t rx_buffer[RX_BUFFER_SIZE];
 volatile uint8_t rx_buffer_head = 0;
 volatile uint8_t rx_buffer_tail = 0;
 
-#define RX_MIN_OPEN_SLOTS 64  // when to trigger XONXOFF event
+#define RX_MIN_OPEN_SLOTS 32  // when to trigger XONXOFF event
 volatile uint8_t rx_buffer_open_slots = RX_BUFFER_SIZE;
 volatile uint8_t xoff_flag = 0;
 volatile uint8_t xon_flag = 0;

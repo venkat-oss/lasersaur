@@ -52,6 +52,8 @@
 char rx_line[BUFFER_LINE_SIZE];
 char *rx_line_cursor;
 
+uint8_t line_checksum_ok_already;
+
 #define FAIL(status) gc.status_code = status;
 
 typedef struct {
@@ -94,6 +96,7 @@ void gcode_init() {
   gc.offsets[3+Y_AXIS] = CONFIG_Y_ORIGIN_OFFSET;
   gc.offsets[3+Z_AXIS] = CONFIG_Z_ORIGIN_OFFSET;
   position_update_requested = false;
+  line_checksum_ok_already = false;
 }
 
 
@@ -102,8 +105,9 @@ void gcode_process_line() {
   int numChars = 0;
   uint8_t iscomment = false;
   int status_code = STATUS_OK;
-  int line_processed = false;
-    
+  uint8_t line_processed = false;
+  uint8_t skip_line = false;
+
   while ((numChars==0) || (chr != '\n')) {
     // handle position update after a stop
     if (position_update_requested) {
@@ -168,32 +172,50 @@ void gcode_process_line() {
         printInteger(status_code);        
       }
     } else {
-      printString(rx_line);  // DEBUG
       if (rx_line[0] == '*' || rx_line[0] == '^') {
-        rx_line_cursor = rx_line+2;  // set line offset
-        uint8_t rx_checksum = (uint8_t)rx_line[1];
-        char *itr = rx_line_cursor;
-        uint16_t checksum = 0;
-        while (*itr) {  // all chars without 0-termination
-          checksum += (uint8_t)*itr++;
-          if (checksum >= 128) {
-            checksum -= 128;
-          }          
-        }
-        checksum = (checksum >> 1) + 128; //  /2, +128
-        printString("(");
-        printInteger(rx_checksum);
-        printString(",");
-        printInteger(checksum);
-        printString(")");        
-        if (checksum != rx_checksum) {
-          stepper_request_stop(STATUS_TRANSMISSION_ERROR);
+        // receiving a line with checksum
+        // expecting 0-n redundant lines starting with '^'
+        // followed by a final line prepended by '*'
+        if (!line_checksum_ok_already) {
+          rx_line_cursor = rx_line+2;  // set line offset
+          uint8_t rx_checksum = (uint8_t)rx_line[1];
+          char *itr = rx_line_cursor;
+          uint16_t checksum = 0;
+          while (*itr) {  // all chars without 0-termination
+            checksum += (uint8_t)*itr++;
+            if (checksum >= 128) {
+              checksum -= 128;
+            }          
+          }
+          checksum = (checksum >> 1) + 128; //  /2, +128
+          // printString("(");
+          // printInteger(rx_checksum);
+          // printString(",");
+          // printInteger(checksum);
+          // printString(")");        
+          if (checksum != rx_checksum) {
+            if (rx_line[0] == '^') {
+              skip_line = true;
+              printString("^");
+            } else {  // '*'
+              printString(rx_line);  // DEBUG
+              stepper_request_stop(STATUS_TRANSMISSION_ERROR);
+              line_checksum_ok_already = false;
+            }
+          } else {  // we got a good line
+            line_checksum_ok_already = true;
+          }
+        } else {  // we already got a correct line
+          skip_line = true;
+          if (rx_line[0] == '*') {  // last redundant line
+            line_checksum_ok_already = false;
+          }
         }
       } else {
         rx_line_cursor = rx_line;
       }
       
-      if (rx_line_cursor[0] != '?') {
+      if (rx_line_cursor[0] != '?' && !skip_line) {
         // process the next line of G-code
         status_code = gcode_execute_line(rx_line_cursor);  
         line_processed = true;

@@ -105,8 +105,8 @@ void gcode_process_line() {
   int numChars = 0;
   uint8_t iscomment = false;
   int status_code = STATUS_OK;
-  uint8_t line_processed = false;
   uint8_t skip_line = false;
+  uint8_t print_extended_status = false;
 
   while ((numChars==0) || (chr != '\n')) {
     // handle position update after a stop
@@ -179,6 +179,11 @@ void gcode_process_line() {
         if (!line_checksum_ok_already) {
           rx_line_cursor = rx_line+2;  // set line offset
           uint8_t rx_checksum = (uint8_t)rx_line[1];
+          if (rx_checksum < 128) {
+            printString(rx_line);
+            printString(" -> checksum outside [128,255]");
+            stepper_request_stop(STATUS_TRANSMISSION_ERROR);
+          }
           char *itr = rx_line_cursor;
           uint16_t checksum = 0;
           while (*itr) {  // all chars without 0-termination
@@ -198,14 +203,19 @@ void gcode_process_line() {
               skip_line = true;
               printString("^");
             } else {  // '*'
-              printString(rx_line);  // DEBUG
+              printString(rx_line);
               stepper_request_stop(STATUS_TRANSMISSION_ERROR);
-              line_checksum_ok_already = false;
+              // line_checksum_ok_already = false;
             }
           } else {  // we got a good line
-            line_checksum_ok_already = true;
+            // printString("$");
+            if (rx_line[0] == '^') {
+              line_checksum_ok_already = true;
+            }            
+            skip_line = false;
           }
         } else {  // we already got a correct line
+          // printString("&");
           skip_line = true;
           if (rx_line[0] == '*') {  // last redundant line
             line_checksum_ok_already = false;
@@ -215,24 +225,27 @@ void gcode_process_line() {
         rx_line_cursor = rx_line;
       }
       
-      if (rx_line_cursor[0] != '?' && !skip_line) {
-        // process the next line of G-code
-        status_code = gcode_execute_line(rx_line_cursor);  
-        line_processed = true;
-        // report parse errors
-        if (status_code == STATUS_OK) {
-          // pass
-        } else if (status_code == STATUS_BAD_NUMBER_FORMAT) {
-          printString("N");  // Warning: Bad number format
-        } else if (status_code == STATUS_EXPECTED_COMMAND_LETTER) {
-          printString("E");  // Warning: Expected command letter
-        } else if (status_code == STATUS_UNSUPPORTED_STATEMENT) {
-          printString("U");  // Warning: Unsupported statement   
+      if (!skip_line) {
+        if (rx_line_cursor[0] != '?') {
+          // process the next line of G-code
+          status_code = gcode_execute_line(rx_line_cursor);  
+          // report parse errors
+          if (status_code == STATUS_OK) {
+            // pass
+          } else if (status_code == STATUS_BAD_NUMBER_FORMAT) {
+            printString("N");  // Warning: Bad number format
+          } else if (status_code == STATUS_EXPECTED_COMMAND_LETTER) {
+            printString("E");  // Warning: Expected command letter
+          } else if (status_code == STATUS_UNSUPPORTED_STATEMENT) {
+            printString("U");  // Warning: Unsupported statement   
+          } else {
+            printString("W");  // Warning: Other error
+            printInteger(status_code);        
+          } 
         } else {
-          printString("W");  // Warning: Other error
-          printInteger(status_code);        
+          print_extended_status = true;
         } 
-      }     
+      }  
     }
 
     #ifndef DEBUG_IGNORE_SENSORS
@@ -265,7 +278,7 @@ void gcode_process_line() {
     #endif
 
     //
-    if (!line_processed) {   
+    if (print_extended_status) {   
       // position
       printString("X");
       printFloat(stepper_get_position_x());

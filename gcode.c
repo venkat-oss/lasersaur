@@ -50,6 +50,7 @@
 
 #define BUFFER_LINE_SIZE 80
 char rx_line[BUFFER_LINE_SIZE];
+char *rx_line_cursor;
 
 #define FAIL(status) gc.status_code = status;
 
@@ -97,7 +98,7 @@ void gcode_init() {
 
 
 void gcode_process_line() {
-  char chr = '\0';
+  uint8_t chr = '\0';
   int numChars = 0;
   uint8_t iscomment = false;
   int status_code = STATUS_OK;
@@ -134,9 +135,9 @@ void gcode_process_line() {
           iscomment = true;
         } else if (chr >= 'a' && chr <= 'z') {
           // upcase any lower case chars
-          rx_line[numChars++] = chr-'a'+'A';
+          rx_line[numChars++] = (char)chr-'a'+'A';
         } else {
-          rx_line[numChars++] = chr;
+          rx_line[numChars++] = (char)chr;
         }
       }
     }
@@ -160,28 +161,56 @@ void gcode_process_line() {
         printString("B");  // Stop: Rx Buffer Overflow  
       } else if (status_code == STATUS_LINE_BUFFER_OVERFLOW) {
         printString("I");  // Stop: Line Buffer Overflow  
+      } else if (status_code == STATUS_TRANSMISSION_ERROR) {
+        printString("T");  // Stop: Serial Transmission Error  
       } else {
         printString("O");  // Stop: Other error
         printInteger(status_code);        
       }
-    } else if (rx_line[0] != '?') {
-      // process the next line of G-code
+    } else {
       printString(rx_line);  // DEBUG
-      status_code = gcode_execute_line(rx_line);
-      line_processed = true;
-      // report parse errors
-      if (status_code == STATUS_OK) {
-        // pass
-      } else if (status_code == STATUS_BAD_NUMBER_FORMAT) {
-        printString("N");  // Warning: Bad number format
-      } else if (status_code == STATUS_EXPECTED_COMMAND_LETTER) {
-        printString("E");  // Warning: Expected command letter
-      } else if (status_code == STATUS_UNSUPPORTED_STATEMENT) {
-        printString("U");  // Warning: Unsupported statement   
+      if (rx_line[0] == '*' || rx_line[0] == '^') {
+        rx_line_cursor = rx_line+2;  // set line offset
+        uint8_t rx_checksum = (uint8_t)rx_line[1];
+        char *itr = rx_line_cursor;
+        uint16_t checksum = 0;
+        while (*itr) {  // all chars without 0-termination
+          checksum += (uint8_t)*itr++;
+          if (checksum >= 128) {
+            checksum -= 128;
+          }          
+        }
+        checksum = (checksum >> 1) + 128; //  /2, +128
+        printString("(");
+        printInteger(rx_checksum);
+        printString(",");
+        printInteger(checksum);
+        printString(")");        
+        if (checksum != rx_checksum) {
+          stepper_request_stop(STATUS_TRANSMISSION_ERROR);
+        }
       } else {
-        printString("W");  // Warning: Other error
-        printInteger(status_code);        
-      }      
+        rx_line_cursor = rx_line;
+      }
+      
+      if (rx_line_cursor[0] != '?') {
+        // process the next line of G-code
+        status_code = gcode_execute_line(rx_line_cursor);  
+        line_processed = true;
+        // report parse errors
+        if (status_code == STATUS_OK) {
+          // pass
+        } else if (status_code == STATUS_BAD_NUMBER_FORMAT) {
+          printString("N");  // Warning: Bad number format
+        } else if (status_code == STATUS_EXPECTED_COMMAND_LETTER) {
+          printString("E");  // Warning: Expected command letter
+        } else if (status_code == STATUS_UNSUPPORTED_STATEMENT) {
+          printString("U");  // Warning: Unsupported statement   
+        } else {
+          printString("W");  // Warning: Other error
+          printInteger(status_code);        
+        } 
+      }     
     }
 
     #ifndef DEBUG_IGNORE_SENSORS

@@ -29,8 +29,9 @@
 #include "stepper.h"
 #include "gcode.h"
 
-
-#define RX_BUFFER_SIZE 255
+// changing rxbuffer from 128 to 255
+// and open slots from 32 to 64 made firmware crash
+#define RX_BUFFER_SIZE 128
 #define TX_BUFFER_SIZE 128
 
 uint8_t rx_buffer[RX_BUFFER_SIZE];

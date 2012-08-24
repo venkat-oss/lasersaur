@@ -103,12 +103,29 @@ void gcode_init() {
 void gcode_process_line() {
   uint8_t chr = '\0';
   int numChars = 0;
-  uint8_t iscomment = false;
   int status_code = STATUS_OK;
   uint8_t skip_line = false;
   uint8_t print_extended_status = false;
 
   while ((numChars==0) || (chr != '\n')) {
+    chr = serial_read();
+    if (chr == SERIAL_NO_DATA) {
+        sleep_mode();
+    } else if (numChars + 1 >= BUFFER_LINE_SIZE) {  // +1 for \0
+      // reached line size, other side sent too long lines
+      stepper_request_stop(STATUS_LINE_BUFFER_OVERFLOW);
+      break;
+    } else if (chr <= ' ') { 
+      // ignore whitepace and control characters
+    } else {
+      rx_line[numChars++] = (char)chr;
+    }
+  }
+  
+  //// process line
+  if (numChars > 0) {          // Line is complete. Then execute!
+    rx_line[numChars] = '\0';  // terminate string
+    
     // handle position update after a stop
     if (position_update_requested) {
       gc.position[X_AXIS] = stepper_get_position_x();
@@ -117,40 +134,7 @@ void gcode_process_line() {
       position_update_requested = false;
       //printString("gcode pos update\n");  // debug
     }
-
-    chr = serial_read();
-    if (chr == SERIAL_NO_DATA) {
-        sleep_mode();
-    } else if (numChars + 1 >= BUFFER_LINE_SIZE) {  // +1 for \0
-      // reached line size, other side sent too long lines
-      stepper_request_stop(STATUS_LINE_BUFFER_OVERFLOW);
-      break;
-    } else {
-      // process the current char; gcode-specific
-      if (iscomment) {
-        if (chr == ')') {  // ignore comment chars
-          iscomment = false;  // end of comment
-        }
-      } else {
-        if (chr <= ' ') { 
-          // ignore whitepace and control characters
-        } else if (chr == '(') {
-          // ignore all characters until ')' or EOL.
-          iscomment = true;
-        } else if (chr >= 'a' && chr <= 'z') {
-          // upcase any lower case chars
-          rx_line[numChars++] = (char)chr-'a'+'A';
-        } else {
-          rx_line[numChars++] = (char)chr;
-        }
-      }
-    }
-  }
-  
-  //// process line
-  if (numChars > 0) {          // Line is complete. Then execute!
-    rx_line[numChars] = '\0';  // terminate string
-    
+        
     if (stepper_stop_requested()) {
       printString("!");  // report harware is in stop mode
       status_code = stepper_stop_status();

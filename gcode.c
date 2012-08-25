@@ -212,8 +212,8 @@ void gcode_process_line() {
       if (!skip_line) {
         if (rx_line_cursor[0] != '?') {
           // process the next line of G-code
-          // status_code = gcode_execute_line(rx_line_cursor);
-          _delay_ms(rand()/500);
+          status_code = gcode_execute_line(rx_line_cursor);
+          // _delay_ms(rand()/500);
           // report parse errors
           if (status_code == STATUS_OK) {
             // pass

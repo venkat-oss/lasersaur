@@ -21,9 +21,9 @@
 */
 
 #include <avr/interrupt.h>
+#include <util/atomic.h>
 #include <avr/sleep.h>
 #include <math.h>
-#include <avr/pgmspace.h>
 #include "serial.h"
 #include "config.h"
 #include "stepper.h"
@@ -41,20 +41,20 @@
 * buffer write: if(!full) {buf[head] = item}     *
 * buffer read:  if(!empty) {return buf[tail]}    *
 *************************************************/
-#define RX_BUFFER_SIZE 128
+#define RX_BUFFER_SIZE 255
+#define RX_CHUNK_SIZE 64
 #define TX_BUFFER_SIZE 128
-#define RX_CHUNK_SIZE 32
 uint8_t rx_buffer[RX_BUFFER_SIZE];
 volatile uint8_t rx_buffer_head = 0;
 volatile uint8_t rx_buffer_tail = 0;
-volatile uint8_t rx_buffer_open_slots = RX_BUFFER_SIZE-1;
+volatile uint8_t rx_buffer_open_slots = RX_BUFFER_SIZE - 1;
 
 uint8_t tx_buffer[TX_BUFFER_SIZE];
 volatile uint8_t tx_buffer_head = 0;
 volatile uint8_t tx_buffer_tail = 0;
 
-volatile uint8_t you_may_send_flag = 0;
-volatile uint8_t let_me_know_when_ready_flag = 0;
+volatile uint8_t send_ready_flag = 0;
+volatile uint8_t request_ready_flag = 0;
 
 
 
@@ -88,29 +88,31 @@ void serial_init() {
 
 
 void serial_write(uint8_t data) {
-  // Calculate next head
-  uint8_t next_head = tx_buffer_head + 1;
-  if (next_head == TX_BUFFER_SIZE) { next_head = 0; }  // wrap around
+  ATOMIC_BLOCK(ATOMIC_FORCEON) {
+    // Calculate next head
+    uint8_t next_head = tx_buffer_head + 1;
+    if (next_head == TX_BUFFER_SIZE) { next_head = 0; }  // wrap around
 
-  // wait, if buffer is full
-  while (next_head == tx_buffer_tail) {
-    // sleep_mode();
+    // wait, if buffer is full
+    while (next_head == tx_buffer_tail) {
+      // sleep_mode();
+    }
+
+    // Store data and advance head
+    tx_buffer[tx_buffer_head] = data;
+    tx_buffer_head = next_head;
+    
+  	UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt  
   }
-
-  // Store data and advance head
-  tx_buffer[tx_buffer_head] = data;
-  tx_buffer_head = next_head;
-  
-	UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt  
 }
 
 // tx interrupt, called when UDR0 gets empty
 SIGNAL(USART_UDRE_vect) {
   uint8_t tail = tx_buffer_tail;  // optimize for volatile
   
-  if (you_may_send_flag) {    // request another chunk of data
+  if (send_ready_flag) {    // request another chunk of data
     UDR0 = CHAR_READY;
-    you_may_send_flag = 0;
+    send_ready_flag = 0;
   } else {                    // Send a byte from the buffer 
     UDR0 = tx_buffer[tail];
     if (++tail == TX_BUFFER_SIZE) {tail = 0;}  // increment
@@ -131,14 +133,16 @@ uint8_t serial_read() {
   // return return data, advance tail
 	uint8_t data = rx_buffer[rx_buffer_tail];
   if (++rx_buffer_tail == RX_BUFFER_SIZE) {rx_buffer_tail = 0;}  // increment
-  if (rx_buffer_open_slots == RX_CHUNK_SIZE) {  // enough slots opening up
-    if (let_me_know_when_ready_flag) {
-      you_may_send_flag = 1;
-      UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt  
-      let_me_know_when_ready_flag = 0;
-    }
-  }    
-  rx_buffer_open_slots++;
+  ATOMIC_BLOCK(ATOMIC_FORCEON) {
+    if (rx_buffer_open_slots == RX_CHUNK_SIZE) {  // enough slots opening up
+      if (request_ready_flag) {
+        send_ready_flag = 1;
+        UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt  
+        request_ready_flag = 0;
+      }
+    }    
+    rx_buffer_open_slots++;
+  }
 	return data;
 }
 
@@ -151,8 +155,14 @@ SIGNAL(USART_RX_vect) {
   } else if (data == CHAR_RESUME) {
     // special resume character, bypass buffer
     stepper_stop_resume();
-  } else if (data == CHAR_LET_ME_KNOW_WHEN_READY) {
-    let_me_know_when_ready_flag = 1;
+  } else if (data == CHAR_REQUEST_READY) {
+    if (rx_buffer_open_slots > RX_CHUNK_SIZE) {
+      send_ready_flag = 1;
+      UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt 
+    } else {
+      // send ready when enough slots open up
+      request_ready_flag = 1;
+    }
   } else {
     uint8_t head = rx_buffer_head;  // optimize for volatile    
     uint8_t next_head = head + 1;
@@ -160,6 +170,7 @@ SIGNAL(USART_RX_vect) {
 
     if (next_head == rx_buffer_tail) {
       // buffer is full, other side sent too much data
+      printString("# BUF OV");
       stepper_request_stop(STATUS_RX_BUFFER_OVERFLOW);
     } else {
       rx_buffer[head] = data;

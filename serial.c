@@ -29,30 +29,41 @@
 #include "stepper.h"
 #include "gcode.h"
 
-// changing rxbuffer from 128 to 255
-// and open slots from 32 to 64 made firmware crash
-#define RX_BUFFER_SIZE 192
-#define TX_BUFFER_SIZE 128
 
+/** ring buffer **********************************
+* [_][h][e][l][l][o][_][_][_] -> wrap around     *
+*     |              |                           *
+*    tail           head                         *
+*    (read)        (write)                       *
+*                                                *
+* buffer empty condition: head == tail           *
+* buffer full condition:  (head+1)%size == tail  *
+* buffer write: if(!full) {buf[head] = item}     *
+* buffer read:  if(!empty) {return buf[tail]}    *
+*************************************************/
+#define RX_BUFFER_SIZE 128
+#define TX_BUFFER_SIZE 128
+#define RX_CHUNK_SIZE 32
 uint8_t rx_buffer[RX_BUFFER_SIZE];
 volatile uint8_t rx_buffer_head = 0;
 volatile uint8_t rx_buffer_tail = 0;
-
-#define RX_MIN_OPEN_SLOTS 64  // when to trigger XONXOFF event
-volatile uint8_t rx_buffer_open_slots = RX_BUFFER_SIZE;
-volatile uint8_t xoff_flag = 0;
-volatile uint8_t xon_flag = 0;
-volatile uint8_t xon_remote_state = 0;
+volatile uint8_t rx_buffer_open_slots = RX_BUFFER_SIZE-1;
 
 uint8_t tx_buffer[TX_BUFFER_SIZE];
 volatile uint8_t tx_buffer_head = 0;
 volatile uint8_t tx_buffer_tail = 0;
+
+volatile uint8_t you_may_send_flag = 0;
+
+
 
 static void set_baud_rate(long baud) {
   uint16_t UBRR0_value = ((F_CPU / 16 + baud / 2) / baud - 1);
 	UBRR0H = UBRR0_value >> 8;
 	UBRR0L = UBRR0_value;
 }
+
+
 
 void serial_init() {
   set_baud_rate(BAUD_RATE);
@@ -69,83 +80,61 @@ void serial_init() {
 	  
 	// defaults to 8-bit, no parity, 1 stop bit
 	
-	// send a XON to indicate device is ready to receive
-	xon_flag = 1;
-	UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt
-	
   printPgmString(PSTR("# LasaurGrbl " LASAURGRBL_VERSION));
   printPgmString(PSTR("\n")); 	
 }
 
+
+
 void serial_write(uint8_t data) {
   // Calculate next head
   uint8_t next_head = tx_buffer_head + 1;
-  if (next_head == TX_BUFFER_SIZE) { next_head = 0; }
+  if (next_head == TX_BUFFER_SIZE) { next_head = 0; }  // wrap around
 
-  // Wait until there's a space in the buffer
-  while (next_head == tx_buffer_tail) { sleep_mode(); };
+  // wait, if buffer is full
+  while (next_head == tx_buffer_tail) {
+    // sleep_mode();
+  }
 
   // Store data and advance head
   tx_buffer[tx_buffer_head] = data;
   tx_buffer_head = next_head;
   
-  // Enable Data Register Empty Interrupt to make sure tx-streaming is running
-	UCSR0B |=  (1 << UDRIE0); 
+	UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt  
 }
 
-// Data Register Empty Interrupt handler
+// tx interrupt, called when UDR0 gets empty
 SIGNAL(USART_UDRE_vect) {
-  // temporary tx_buffer_tail (to optimize for volatile)
-  uint8_t tail = tx_buffer_tail;
+  uint8_t tail = tx_buffer_tail;  // optimize for volatile
   
-  if (xoff_flag) {
-    UDR0 = CHAR_XOFF;  //send XOFF
-    xoff_flag = 0;
-    xon_remote_state = 0;
-  } else if (xon_flag) {
-    UDR0 = CHAR_XON;  //send XON
-    xon_flag = 0;
-    xon_remote_state = 1;
-  } else {
-    // Send a byte from the buffer	
+  if (you_may_send_flag) {    // request another chunk of data
+    UDR0 = CHAR_YOU_MAY_SEND;
+    you_may_send_flag = 0;
+  } else {                    // Send a byte from the buffer 
     UDR0 = tx_buffer[tail];
-
-    // Update tail position
-    tail++;
-    if (tail == TX_BUFFER_SIZE) { tail = 0; }
-    
+    if (++tail == TX_BUFFER_SIZE) {tail = 0;}  // increment
     tx_buffer_tail = tail;
   }
   
-  // Turn off Data Register Empty Interrupt to stop tx-streaming if this concludes the transfer
+  // disable tx interrupt, if buffer empty
   if (tail == tx_buffer_head) { UCSR0B &= ~(1 << UDRIE0); }  
 }
 
+
+
 uint8_t serial_read() {
-	if (rx_buffer_tail == rx_buffer_head) {
-		return SERIAL_NO_DATA;
-	} else {
-		uint8_t data = rx_buffer[rx_buffer_tail];
-		rx_buffer_tail++;
-    rx_buffer_open_slots++;
-    if (rx_buffer_tail == RX_BUFFER_SIZE) { rx_buffer_tail = 0; } 
-    
-    if (xon_remote_state == 0) {  // generate flow control event
-      if (rx_buffer_open_slots > RX_MIN_OPEN_SLOTS) {
-        xon_flag = 1;
-      	UCSR0B |=  (1 << UDRIE0);  // Enable Data Register Empty Interrupt      
-      }
-    }
-  
-		return data;
-	}
+  // wait, if buffer is empty
+  while (rx_buffer_tail == rx_buffer_head) {
+    // sleep_mode();
+  }
+  // return return data, advance tail
+	uint8_t data = rx_buffer[rx_buffer_tail];
+  if (++rx_buffer_tail == RX_BUFFER_SIZE) {rx_buffer_tail = 0;}  // increment
+  rx_buffer_open_slots++;
+	return data;
 }
 
-uint8_t serial_available() {
-  return RX_BUFFER_SIZE - rx_buffer_open_slots;
-}
-
-// Rx Interrupt, called whenever a new byte is in UDR0
+// rx interrupt, called whenever a new byte is in UDR0
 SIGNAL(USART_RX_vect) {
   uint8_t data = UDR0;
   if (data == CHAR_STOP) {
@@ -154,28 +143,32 @@ SIGNAL(USART_RX_vect) {
   } else if (data == CHAR_RESUME) {
     // special resume character, bypass buffer
     stepper_stop_resume();
+  } else if (data == CHAR_MAY_I_SEND) {
+    // request more data, bypass buffer
+    if (rx_buffer_open_slots > RX_CHUNK_SIZE) {
+      you_may_send_flag = 1;
+      UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt  
+    }
   } else {
-    uint8_t next_head = rx_buffer_head + 1;
-    if (next_head == RX_BUFFER_SIZE) { next_head = 0; }
+    uint8_t head = rx_buffer_head;  // optimize for volatile    
+    uint8_t next_head = head + 1;
+    if (next_head == RX_BUFFER_SIZE) {next_head = 0;}
 
     if (next_head == rx_buffer_tail) {
       // buffer is full, other side sent too much data
       stepper_request_stop(STATUS_RX_BUFFER_OVERFLOW);
     } else {
-      rx_buffer[rx_buffer_head] = data;
+      rx_buffer[head] = data;
       rx_buffer_head = next_head;
       rx_buffer_open_slots--;
-    
-      if (xon_remote_state == 1) {  // generate flow control event
-        if (rx_buffer_open_slots <= RX_MIN_OPEN_SLOTS) {
-          xoff_flag = 1;
-          UCSR0B |=  (1 << UDRIE0);  // Enable Data Register Empty Interrupt
-        }
-      } 
     }
   }
 }
 
+
+uint8_t serial_available() {
+  return RX_BUFFER_SIZE - rx_buffer_open_slots;
+}
 
 
 
@@ -223,7 +216,6 @@ void printInteger(long n) {
   printIntegerInBase(n, 10);
 }
 
-// A very simple
 void printFloat(double n) {
   if (n < 0) {
     serial_write('-');

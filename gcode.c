@@ -25,6 +25,7 @@
 #include "errno.h"
 #include <stdint.h>
 #include <stdlib.h>
+#include <util/delay.h>
 #include "gcode.h"
 #include "config.h"
 #include "serial.h"
@@ -108,16 +109,15 @@ void gcode_process_line() {
   uint8_t print_extended_status = false;
 
   while ((numChars==0) || (chr != '\n')) {
-    chr = serial_read();
-    if (chr == SERIAL_NO_DATA) {
-        sleep_mode();
-    } else if (numChars + 1 >= BUFFER_LINE_SIZE) {  // +1 for \0
+    chr = serial_read();  // blocks until there is data
+    if (numChars + 1 >= BUFFER_LINE_SIZE) {  // +1 for \0
       // reached line size, other side sent too long lines
       stepper_request_stop(STATUS_LINE_BUFFER_OVERFLOW);
       break;
     } else if (chr <= ' ') { 
-      // ignore whitepace and control characters
+      // ignore control characters and space
     } else {
+      // add to line, as char which is signed
       rx_line[numChars++] = (char)chr;
     }
   }
@@ -212,7 +212,8 @@ void gcode_process_line() {
       if (!skip_line) {
         if (rx_line_cursor[0] != '?') {
           // process the next line of G-code
-          status_code = gcode_execute_line(rx_line_cursor);  
+          // status_code = gcode_execute_line(rx_line_cursor);
+          _delay_ms(rand()/500);
           // report parse errors
           if (status_code == STATUS_OK) {
             // pass

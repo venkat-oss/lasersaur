@@ -123,7 +123,7 @@ void stepper_init() {
 // block until all command blocks are executed
 void stepper_synchronize() {
   while(processing_flag) { 
-    sleep_mode();
+    // sleep_mode();
   }
 }
 

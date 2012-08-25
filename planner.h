@@ -64,15 +64,17 @@ typedef struct {
 // Initialize the motion plan subsystem      
 void planner_init();
 
-// Add a new linear movement to the buffer. x, y and z is 
-// the signed, absolute target position in millimaters. Feed rate specifies the speed of the motion.
+// Add a new linear movement to the buffer.
+// x, y and z is the signed, absolute target position in millimaters.
+// Feed rate specifies the speed of the motion.
 void planner_line(double x, double y, double z, double feed_rate, uint8_t nominal_laser_intensity);
 
-// Add a new piercing action, lasing at one spot
+// Add a new piercing action, lasing at one spot.
 void planner_dwell(double seconds, uint8_t nominal_laser_intensity);
 
 // Add a non-motion command to the queue.
 // Typical types are: TYPE_AIRGAS_DISABLE, TYPE_AIR_ENABLE, TYPE_GAS_ENABLE
+// This call is blocking when the block buffer is full.
 void planner_command(uint8_t type);
 
 

@@ -76,7 +76,7 @@ void planner_line(double x, double y, double z, double feed_rate, uint8_t nomina
   int next_buffer_head = next_block_index( block_buffer_head );	
   while(block_buffer_tail == next_buffer_head) {  // buffer full condition
     // good! We are well ahead of the robot. Rest here until buffer has room.
-    sleep_mode();
+    // sleep_mode();
   }
   
   // handle position update after a stop
@@ -214,7 +214,7 @@ void planner_command(uint8_t type) {
   int next_buffer_head = next_block_index( block_buffer_head );	
   while(block_buffer_tail == next_buffer_head) {  // buffer full condition
     // good! We are well ahead of the robot. Rest here until buffer has room.
-    sleep_mode();
+    // sleep_mode();
   }    
 
   // Prepare to set up new block

@@ -43,11 +43,11 @@
 void gcode_init();
 
 // read chars from serial
+// blocks until a whole line has been received
 void gcode_process_line();
 
 // Execute one line of rs275/ngc/g-code
-// blocks until a whole line has been received
-// calls sleep_mode() when no serial data is available
+// blocks when 
 uint8_t gcode_execute_line(char *line);
 
 // update to stepper position when steppers have been stopped

@@ -54,6 +54,7 @@ volatile uint8_t tx_buffer_head = 0;
 volatile uint8_t tx_buffer_tail = 0;
 
 volatile uint8_t you_may_send_flag = 0;
+volatile uint8_t let_me_know_when_ready_flag = 0;
 
 
 
@@ -108,7 +109,7 @@ SIGNAL(USART_UDRE_vect) {
   uint8_t tail = tx_buffer_tail;  // optimize for volatile
   
   if (you_may_send_flag) {    // request another chunk of data
-    UDR0 = CHAR_YOU_MAY_SEND;
+    UDR0 = CHAR_READY;
     you_may_send_flag = 0;
   } else {                    // Send a byte from the buffer 
     UDR0 = tx_buffer[tail];
@@ -130,6 +131,13 @@ uint8_t serial_read() {
   // return return data, advance tail
 	uint8_t data = rx_buffer[rx_buffer_tail];
   if (++rx_buffer_tail == RX_BUFFER_SIZE) {rx_buffer_tail = 0;}  // increment
+  if (rx_buffer_open_slots == RX_CHUNK_SIZE) {  // enough slots opening up
+    if (let_me_know_when_ready_flag) {
+      you_may_send_flag = 1;
+      UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt  
+      let_me_know_when_ready_flag = 0;
+    }
+  }    
   rx_buffer_open_slots++;
 	return data;
 }
@@ -143,12 +151,8 @@ SIGNAL(USART_RX_vect) {
   } else if (data == CHAR_RESUME) {
     // special resume character, bypass buffer
     stepper_stop_resume();
-  } else if (data == CHAR_MAY_I_SEND) {
-    // request more data, bypass buffer
-    if (rx_buffer_open_slots > RX_CHUNK_SIZE) {
-      you_may_send_flag = 1;
-      UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt  
-    }
+  } else if (data == CHAR_LET_ME_KNOW_WHEN_READY) {
+    let_me_know_when_ready_flag = 1;
   } else {
     uint8_t head = rx_buffer_head;  // optimize for volatile    
     uint8_t next_head = head + 1;

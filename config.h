@@ -123,8 +123,8 @@
 #define MINIMUM_STEPS_PER_MINUTE 1600U // (steps/min) - Integer value only
 // 1600 @ 32step_per_mm = 50mm/min
 
-#define CHAR_YOU_MAY_SEND  '\x11'
-#define CHAR_MAY_I_SEND    '\x14'
+#define CHAR_READY  '\x12'
+#define CHAR_LET_ME_KNOW_WHEN_READY    '\x14'
 #define CHAR_STOP   '!'
 #define CHAR_RESUME '~'
 

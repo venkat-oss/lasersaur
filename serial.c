@@ -29,6 +29,8 @@
 #include "stepper.h"
 #include "gcode.h"
 
+#define CHAR_STOP '!'
+#define CHAR_RESUME '~'
 
 /** ring buffer **********************************
 * [_][h][e][l][l][o][_][_][_] -> wrap around     *
@@ -42,7 +44,6 @@
 * buffer read:  if(!empty) {return buf[tail]}    *
 *************************************************/
 #define RX_BUFFER_SIZE 255
-#define RX_CHUNK_SIZE 64
 #define TX_BUFFER_SIZE 128
 uint8_t rx_buffer[RX_BUFFER_SIZE];
 volatile uint8_t rx_buffer_head = 0;
@@ -53,6 +54,18 @@ uint8_t tx_buffer[TX_BUFFER_SIZE];
 volatile uint8_t tx_buffer_head = 0;
 volatile uint8_t tx_buffer_tail = 0;
 
+/** protocol *************************************
+* The sending app initiates any stream by        *
+* requesting a ready byte. This serial code then *
+* sends one as soon as there are RX_CHUNK_SIZE   *
+* slots available in the rx buffer. The sending  *
+* app can then send this amount of bytes.        *
+* Thereafter it can again request a ready byte   *
+* and apon receiving it send the next chunk.     *
+*************************************************/
+#define CHAR_READY '\x12'
+#define CHAR_REQUEST_READY '\x14'
+#define RX_CHUNK_SIZE 64
 volatile uint8_t send_ready_flag = 0;
 volatile uint8_t request_ready_flag = 0;
 
@@ -88,7 +101,6 @@ void serial_init() {
 
 
 void serial_write(uint8_t data) {
-  ATOMIC_BLOCK(ATOMIC_FORCEON) {
     // Calculate next head
     uint8_t next_head = tx_buffer_head + 1;
     if (next_head == TX_BUFFER_SIZE) { next_head = 0; }  // wrap around
@@ -103,7 +115,6 @@ void serial_write(uint8_t data) {
     tx_buffer_head = next_head;
     
   	UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt  
-  }
 }
 
 // tx interrupt, called when UDR0 gets empty
@@ -170,7 +181,6 @@ SIGNAL(USART_RX_vect) {
 
     if (next_head == rx_buffer_tail) {
       // buffer is full, other side sent too much data
-      printString("# BUF OV");
       stepper_request_stop(STATUS_RX_BUFFER_OVERFLOW);
     } else {
       rx_buffer[head] = data;

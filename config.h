@@ -27,7 +27,7 @@
 // (must not contain capital letters)
 #define LASAURGRBL_VERSION "12.08d"
 #define BAUD_RATE 57600
-#define DEBUG_IGNORE_SENSORS  // set for debugging
+// #define DEBUG_IGNORE_SENSORS  // set for debugging
 
 
 #define CONFIG_X_STEPS_PER_MM 32.80839895 //microsteps/mm
@@ -122,11 +122,7 @@
 // never reach its target. This parameter should always be greater than zero.
 #define MINIMUM_STEPS_PER_MINUTE 1600U // (steps/min) - Integer value only
 // 1600 @ 32step_per_mm = 50mm/min
-
-#define CHAR_READY          '\x12'
-#define CHAR_REQUEST_READY  '\x14'
-#define CHAR_STOP   '!'
-#define CHAR_RESUME '~'
+  
 
 #define X_AXIS 0
 #define Y_AXIS 1

@@ -25,7 +25,6 @@
 #include "errno.h"
 #include <stdint.h>
 #include <stdlib.h>
-#include <util/delay.h>
 #include "gcode.h"
 #include "config.h"
 #include "serial.h"
@@ -213,7 +212,6 @@ void gcode_process_line() {
         if (rx_line_cursor[0] != '?') {
           // process the next line of G-code
           status_code = gcode_execute_line(rx_line_cursor);
-          // _delay_ms(rand()/500);
           // report parse errors
           if (status_code == STATUS_OK) {
             // pass

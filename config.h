@@ -25,7 +25,7 @@
 
 // Version number
 // (must not contain capital letters)
-#define LASAURGRBL_VERSION "12.08e"
+#define LASAURGRBL_VERSION "12.08f"
 #define BAUD_RATE 57600
 // #define DEBUG_IGNORE_SENSORS  // set for debugging
 

@@ -108,6 +108,9 @@ void stepper_init() {
   
   adjust_speed(MINIMUM_STEPS_PER_MINUTE);
   clear_vector(stepper_position);
+  stepper_set_position( CONFIG_X_ORIGIN_OFFSET, 
+                        CONFIG_Y_ORIGIN_OFFSET, 
+                        CONFIG_Z_ORIGIN_OFFSET );
   acceleration_tick_counter = 0;
   current_block = NULL;
   stop_requested = false;

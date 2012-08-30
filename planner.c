@@ -56,6 +56,9 @@ void planner_init() {
   block_buffer_head = 0;
   block_buffer_tail = 0;
   clear_vector(position);
+  planner_set_position( CONFIG_X_ORIGIN_OFFSET, 
+                        CONFIG_Y_ORIGIN_OFFSET, 
+                        CONFIG_Z_ORIGIN_OFFSET );  
   position_update_requested = false;
   clear_vector_double(previous_unit_vec);
   previous_nominal_speed = 0.0;

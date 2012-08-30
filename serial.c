@@ -95,7 +95,7 @@ void serial_init() {
 	// defaults to 8-bit, no parity, 1 stop bit
 	
   printPgmString(PSTR("# LasaurGrbl " LASAURGRBL_VERSION));
-  printPgmString(PSTR("\n")); 	
+  printPgmString(PSTR("\n"));
 }
 
 

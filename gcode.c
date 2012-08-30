@@ -83,7 +83,7 @@ void gcode_init() {
   gc.seek_rate = CONFIG_SEEKRATE;
   gc.absolute_mode = true;
   gc.nominal_laser_intensity = 0U;   
-  gc.offselect = 0;  // default to G54 coordinate system
+  gc.offselect = OFFSET_G54;
   // prime G54 cs
   // refine with "G10 L2 P0 X_ Y_ Z_"
   gc.offsets[X_AXIS] = CONFIG_X_ORIGIN_OFFSET;
@@ -96,7 +96,7 @@ void gcode_init() {
   gc.offsets[3+Y_AXIS] = CONFIG_Y_ORIGIN_OFFSET;
   gc.offsets[3+Z_AXIS] = CONFIG_Z_ORIGIN_OFFSET;
   position_update_requested = false;
-  line_checksum_ok_already = false;
+  line_checksum_ok_already = false; 
 }
 
 

@@ -25,7 +25,7 @@
 
 // Version number
 // (must not contain capital letters)
-#define LASAURGRBL_VERSION "12.08f"
+#define LASAURGRBL_VERSION "12.08ng"
 #define BAUD_RATE 57600
 // #define DEBUG_IGNORE_SENSORS  // set for debugging
 
@@ -45,16 +45,17 @@
 #define CONFIG_INVERT_Y_AXIS 1  // 0 is regular, 1 inverts the y direction
 
 
-#define LIMITS_OVERWRITE_DDR     DDRD
-#define LIMITS_OVERWRITE_PORT    PORTD
-#define LIMITS_OVERWRITE_BIT     7
-
 #define SENSE_DDR               DDRD
 #define SENSE_PORT              PORTD
 #define SENSE_PIN               PIND
-#define POWER_BIT               2
+// #define POWER_BIT               2
 #define CHILLER_BIT             3
 #define DOOR_BIT                5
+
+#define AIRGAS_DDR              DDRD
+#define AIRGAS_PORT             PORTD
+#define AIR_BIT                 4  // D4 was unused
+#define GAS_BIT                 7  // used to be limits overwrite
   
 #define LIMIT_DDR               DDRC
 #define LIMIT_PORT              PORTC
@@ -63,11 +64,8 @@
 #define X2_LIMIT_BIT            1
 #define Y1_LIMIT_BIT            2
 #define Y2_LIMIT_BIT            3
-
-#define AIRGAS_DDR              DDRC
-#define AIRGAS_PORT             PORTC
-#define AIR_BIT                 4
-#define GAS_BIT                 5
+#define Z1_LIMIT_BIT            4  // used to be air
+#define Z2_LIMIT_BIT            5  // used to be gas
 
 #define STEPPING_DDR            DDRB
 #define STEPPING_PORT           PORTB
@@ -81,10 +79,10 @@
 
 
 
-#define SENSE_MASK ((1<<POWER_BIT)|(1<<CHILLER_BIT)|(1<<DOOR_BIT))
-#define LIMIT_MASK ((1<<X1_LIMIT_BIT)|(1<<X2_LIMIT_BIT)|(1<<Y1_LIMIT_BIT)|(1<<Y2_LIMIT_BIT))
+#define SENSE_MASK ((1<<CHILLER_BIT)|(1<<DOOR_BIT))
 #define STEPPING_MASK ((1<<X_STEP_BIT)|(1<<Y_STEP_BIT)|(1<<Z_STEP_BIT))
 #define DIRECTION_MASK ((1<<X_DIRECTION_BIT)|(1<<Y_DIRECTION_BIT)|(1<<Z_DIRECTION_BIT))
+#define LIMIT_MASK ((1<<X1_LIMIT_BIT)|(1<<X2_LIMIT_BIT)|(1<<Y1_LIMIT_BIT)|(1<<Y2_LIMIT_BIT)|(1<<Z1_LIMIT_BIT)|(1<<Z2_LIMIT_BIT))
 
 // figure out INVERT_MASK
 // careful! direction pins hardcoded here

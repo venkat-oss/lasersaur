@@ -30,7 +30,7 @@ void sense_init() {
   SENSE_DDR &= ~(SENSE_MASK);  // set as input pins 
   // SENSE_PORT |= SENSE_MASK;    //activate pull-up resistors 
   
-  //// x1_lmit, x2_limit, y1_limit, y2_limit
+  //// x1_lmit, x2_limit, y1_limit, y2_limit, z1_limit, z2_limit
   LIMIT_DDR &= ~(LIMIT_MASK);  // set as input pins
   // LIMIT_PORT |= LIMIT_MASK;    //activate pull-up resistors   
 }
@@ -53,11 +53,7 @@ void control_init() {
   AIRGAS_DDR |= (1 << AIR_BIT);  // set as output pin
   AIRGAS_DDR |= (1 << GAS_BIT);  // set as output pin
   control_air(false);
-  control_gas(false);
-  
-  //// limits overwrite control
-  LIMITS_OVERWRITE_DDR |= 1<<LIMITS_OVERWRITE_BIT;  // define as output pin
-  control_limits_overwrite(true);  // do not use hardware logic to stop steppers    
+  control_gas(false); 
 }
 
 
@@ -83,15 +79,6 @@ void control_gas(bool enable) {
   }  
 }
 
-
-void control_limits_overwrite(bool enable) {
-  if (enable) {
-    // sinking the pin overwrites the limit stop hard logic
-    LIMITS_OVERWRITE_PORT &= ~(1<<LIMITS_OVERWRITE_BIT);  
-  } else {
-    LIMITS_OVERWRITE_PORT |= (1<<LIMITS_OVERWRITE_BIT);  
-  }
-}
 
 
 

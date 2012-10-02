@@ -238,11 +238,7 @@ void gcode_process_line() {
       }
       if (SENSE_CHILLER_OFF) {
         printString("C");  // Warning: Chiller is off
-      }
-      // power
-      if (SENSE_POWER_OFF) {
-        printString("P");  // Power Off
-      }    
+      }   
       // limit
       if (SENSE_LIMITS) {
         if (SENSE_X1_LIMIT) {

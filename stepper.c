@@ -226,10 +226,6 @@ ISR(TIMER1_COMPA_vect) {
       stepper_request_stop(STATUS_LIMIT_HIT);
       busy = false;
       return;    
-    } else if (SENSE_POWER_OFF) {
-      stepper_request_stop(STATUS_POWER_OFF);
-      busy = false;
-      return;    
     }
   #endif
   

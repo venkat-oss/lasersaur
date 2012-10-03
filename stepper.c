@@ -360,24 +360,29 @@ ISR(TIMER1_COMPA_vect) {
     
       break; 
 
-    case TYPE_AIRGAS_DISABLE:
-      control_air(false);
-      control_gas(false);
+    case TYPE_AIR_ASSIST_ENABLE:
+      control_air_assist(true);
       current_block = NULL;
       planner_discard_current_block();  
       break;
 
-    case TYPE_AIR_ENABLE:
-      control_air(true);
+    case TYPE_AIR_ASSIST_DISABLE:
+      control_air_assist(false);
       current_block = NULL;
       planner_discard_current_block();  
       break;
 
-    case TYPE_GAS_ENABLE:
-      control_gas(true);
+    case TYPE_AUX_ASSIST_ENABLE:
+      control_aux_assist(true);
       current_block = NULL;
       planner_discard_current_block();  
-      break;      
+      break;
+
+    case TYPE_AUX_ASSIST_DISABLE:
+      control_aux_assist(false);
+      current_block = NULL;
+      planner_discard_current_block();  
+      break;    
   }
   
   busy = false;

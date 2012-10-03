@@ -40,9 +40,10 @@
 #define NEXT_ACTION_DWELL 3
 #define NEXT_ACTION_HOMING_CYCLE 4
 #define NEXT_ACTION_SET_COORDINATE_OFFSET 5
-#define NEXT_ACTION_AIRGAS_DISABLE 6
-#define NEXT_ACTION_AIR_ENABLE 7
-#define NEXT_ACTION_GAS_ENABLE 8
+#define NEXT_ACTION_AIR_ASSIST_ENABLE 6
+#define NEXT_ACTION_AIR_ASSIST_DISABLE 7
+#define NEXT_ACTION_AUX_ASSIST_ENABLE 8
+#define NEXT_ACTION_AUX_ASSIST_DISABLE 9
 
 
 #define OFFSET_G54 0
@@ -318,9 +319,10 @@ uint8_t gcode_execute_line(char *line) {
         break;
       case 'M':
         switch(int_value) {
-          case 7: next_action = NEXT_ACTION_AIR_ENABLE;break;
-          case 8: next_action = NEXT_ACTION_GAS_ENABLE;break;
-          case 9: next_action = NEXT_ACTION_AIRGAS_DISABLE;break;
+          case 8: next_action = NEXT_ACTION_AIR_ASSIST_ENABLE;break;
+          case 9: next_action = NEXT_ACTION_AIR_ASSIST_DISABLE;break;
+          case 10: next_action = NEXT_ACTION_AUX_ASSIST_ENABLE;break;
+          case 11: next_action = NEXT_ACTION_AUX_ASSIST_DISABLE;break;
           default: FAIL(STATUS_UNSUPPORTED_STATEMENT);
         }            
         break;
@@ -453,15 +455,18 @@ uint8_t gcode_execute_line(char *line) {
         }
       }
       break;
-    case NEXT_ACTION_AIRGAS_DISABLE:
-      planner_control_airgas_disable();
+    case NEXT_ACTION_AIR_ASSIST_ENABLE:
+      planner_control_air_assist_enable();
       break;
-    case NEXT_ACTION_AIR_ENABLE:
-      planner_control_air_enable();
+    case NEXT_ACTION_AIR_ASSIST_DISABLE:
+      planner_control_air_assist_disable();
       break;
-    case NEXT_ACTION_GAS_ENABLE:
-      planner_control_gas_enable();
+    case NEXT_ACTION_AUX_ASSIST_ENABLE:
+      planner_control_aux_assist_enable();
       break;
+    case NEXT_ACTION_AUX_ASSIST_DISABLE:
+      planner_control_aux_assist_disable();
+      break;      
   }
   
   // As far as the parser is concerned, the position is now == target. In reality the

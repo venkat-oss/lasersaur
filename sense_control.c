@@ -26,7 +26,7 @@
 
 
 void sense_init() {
-  //// power, chiller, door
+  //// chiller, door, (power)
   SENSE_DDR &= ~(SENSE_MASK);  // set as input pins 
   // SENSE_PORT |= SENSE_MASK;    //activate pull-up resistors 
   
@@ -49,11 +49,11 @@ void control_init() {
   TCCR0A |= (1 << WGM00);   // set phase correct PWM mode, has half the freq of fast PWM
   TCCR0B |= (1 << CS00);    // prescaler to 1, PWMfreq = 16000/(2*256*1) = 31.25kH
   
-  //// air and gas assist control
-  AIRGAS_DDR |= (1 << AIR_BIT);  // set as output pin
-  AIRGAS_DDR |= (1 << GAS_BIT);  // set as output pin
-  control_air(false);
-  control_gas(false);
+  //// air and aux assist control
+  ASSIST_DDR |= (1 << AIR_ASSIST_BIT);  // set as output pin
+  ASSIST_DDR |= (1 << AUX_ASSIST_BIT);  // set as output pin
+  control_air_assist(false);
+  control_aux_assist(false);
   #ifndef DRIVEBOARD
     //// limits overwrite control
     LIMITS_OVERWRITE_DDR |= 1<<LIMITS_OVERWRITE_BIT; // define as output pin
@@ -68,19 +68,19 @@ void control_laser_intensity(uint8_t intensity) {
 
 
 
-void control_air(bool enable) {
+void control_air_assist(bool enable) {
   if (enable) {
-    AIRGAS_PORT |= (1 << AIR_BIT);
+    ASSIST_PORT |= (1 << AIR_ASSIST_BIT);
   } else {
-    AIRGAS_PORT &= ~(1 << AIR_BIT);
+    ASSIST_PORT &= ~(1 << AIR_ASSIST_BIT);
   }
 }
 
-void control_gas(bool enable) {
+void control_aux_assist(bool enable) {
   if (enable) {
-    AIRGAS_PORT |= (1 << GAS_BIT);
+    ASSIST_PORT |= (1 << AUX_ASSIST_BIT);
   } else {
-    AIRGAS_PORT &= ~(1 << GAS_BIT);
+    ASSIST_PORT &= ~(1 << AUX_ASSIST_BIT);
   }  
 }
 

@@ -26,19 +26,21 @@
 
 // Command types the planner and stepper can schedule for execution 
 #define TYPE_LINE 0
-#define TYPE_AIRGAS_DISABLE 1
-#define TYPE_AIR_ENABLE 2
-#define TYPE_GAS_ENABLE 3
+#define TYPE_AIR_ASSIST_ENABLE 1
+#define TYPE_AIR_ASSIST_DISABLE 2
+#define TYPE_AUX_ASSIST_ENABLE 3
+#define TYPE_AUX_ASSIST_DISABLE 4
 
-#define planner_control_airgas_disable() planner_command(TYPE_AIRGAS_DISABLE)
-#define planner_control_air_enable() planner_command(TYPE_AIR_ENABLE)
-#define planner_control_gas_enable() planner_command(TYPE_GAS_ENABLE)
+#define planner_control_air_assist_enable() planner_command(TYPE_AIR_ASSIST_ENABLE)
+#define planner_control_air_assist_disable() planner_command(TYPE_AIR_ASSIST_DISABLE)
+#define planner_control_aux_assist_enable() planner_command(TYPE_AUX_ASSIST_ENABLE)
+#define planner_control_aux_assist_disable() planner_command(TYPE_AUX_ASSIST_DISABLE)
 
 
 // This struct is used when buffering the setup for each linear movement "nominal" values are as specified in 
 // the source g-code and may never actually be reached if acceleration management is active.
 typedef struct {
-  uint8_t type;                       // Type of command, eg: TYPE_LINE, TYPE_AIR_ENABLE
+  uint8_t type;                       // Type of command, eg: TYPE_LINE, TYPE_AIR_ASSIST_ENABLE
   // Fields used by the bresenham algorithm for tracing the line
   uint32_t steps_x, steps_y, steps_z; // Step count along each axis
   uint8_t  direction_bits;            // The direction bit set for this block (refers to *_DIRECTION_BIT in config.h)
@@ -73,7 +75,7 @@ void planner_line(double x, double y, double z, double feed_rate, uint8_t nomina
 void planner_dwell(double seconds, uint8_t nominal_laser_intensity);
 
 // Add a non-motion command to the queue.
-// Typical types are: TYPE_AIRGAS_DISABLE, TYPE_AIR_ENABLE, TYPE_GAS_ENABLE
+// Typical types are: TYPE_AIR_ASSIST_ENABLE, TYPE_AIR_ASSIST_DISABLE, ...
 // This call is blocking when the block buffer is full.
 void planner_command(uint8_t type);
 

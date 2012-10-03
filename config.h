@@ -26,6 +26,7 @@
 // Version number
 // (must not contain capital letters)
 #define LASAURGRBL_VERSION "12.08ng"
+// #define DRIVEBOARD  // use changes for new driveboard hardware
 #define BAUD_RATE 57600
 // #define DEBUG_IGNORE_SENSORS  // set for debugging
 
@@ -43,19 +44,30 @@
 #define CONFIG_Z_ORIGIN_OFFSET 0.0   // mm, z-offset of table origin from physical home
 #define CONFIG_INVERT_X_AXIS 1  // 0 is regular, 1 inverts the x direction
 #define CONFIG_INVERT_Y_AXIS 1  // 0 is regular, 1 inverts the y direction
+#define CONFIG_INVERT_Z_AXIS 1  // 0 is regular, 1 inverts the y direction
 
 
 #define SENSE_DDR               DDRD
 #define SENSE_PORT              PORTD
 #define SENSE_PIN               PIND
-// #define POWER_BIT               2
+#ifdef DRIVEBOARD
+  // D2 is available
+#else
+  #define POWER_BIT             2
+#endif
 #define CHILLER_BIT             3
 #define DOOR_BIT                5
 
-#define AIRGAS_DDR              DDRD
-#define AIRGAS_PORT             PORTD
-#define AIR_BIT                 4  // D4 was unused
-#define GAS_BIT                 7  // used to be limits overwrite
+#ifdef DRIVEBOARD
+  #define AIRGAS_DDR            DDRD
+  #define AIRGAS_PORT           PORTD
+  #define AIR_BIT               4
+  #define GAS_BIT               7
+#else
+  #define LIMITS_OVERWRITE_DDR  DDRD
+  #define LIMITS_OVERWRITE_PORT PORTD
+  #define LIMITS_OVERWRITE_BIT  7  
+#endif
   
 #define LIMIT_DDR               DDRC
 #define LIMIT_PORT              PORTC
@@ -64,8 +76,15 @@
 #define X2_LIMIT_BIT            1
 #define Y1_LIMIT_BIT            2
 #define Y2_LIMIT_BIT            3
-#define Z1_LIMIT_BIT            4  // used to be air
-#define Z2_LIMIT_BIT            5  // used to be gas
+#ifdef DRIVEBOARD
+  #define Z1_LIMIT_BIT          4
+  #define Z2_LIMIT_BIT          5
+#else
+  #define AIRGAS_DDR            DDRC
+  #define AIRGAS_PORT           PORTC
+  #define AIR_BIT               4
+  #define GAS_BIT               5
+#endif
 
 #define STEPPING_DDR            DDRB
 #define STEPPING_PORT           PORTB
@@ -78,24 +97,37 @@
 
 
 
-
-#define SENSE_MASK ((1<<CHILLER_BIT)|(1<<DOOR_BIT))
+#ifdef DRIVEBOARD
+  #define SENSE_MASK ((1<<CHILLER_BIT)|(1<<DOOR_BIT))
+  #define LIMIT_MASK ((1<<X1_LIMIT_BIT)|(1<<X2_LIMIT_BIT)|(1<<Y1_LIMIT_BIT)|(1<<Y2_LIMIT_BIT)|(1<<Z1_LIMIT_BIT)|(1<<Z2_LIMIT_BIT))
+#else
+  #define SENSE_MASK ((1<<POWER_BIT)|(1<<CHILLER_BIT)|(1<<DOOR_BIT))
+  #define LIMIT_MASK ((1<<X1_LIMIT_BIT)|(1<<X2_LIMIT_BIT)|(1<<Y1_LIMIT_BIT)|(1<<Y2_LIMIT_BIT))
+#endif
 #define STEPPING_MASK ((1<<X_STEP_BIT)|(1<<Y_STEP_BIT)|(1<<Z_STEP_BIT))
 #define DIRECTION_MASK ((1<<X_DIRECTION_BIT)|(1<<Y_DIRECTION_BIT)|(1<<Z_DIRECTION_BIT))
-#define LIMIT_MASK ((1<<X1_LIMIT_BIT)|(1<<X2_LIMIT_BIT)|(1<<Y1_LIMIT_BIT)|(1<<Y2_LIMIT_BIT)|(1<<Z1_LIMIT_BIT)|(1<<Z2_LIMIT_BIT))
 
 // figure out INVERT_MASK
-// careful! direction pins hardcoded here
-// (1<<X_DIRECTION_BIT) | (1<<Y_DIRECTION_BIT)
-#if CONFIG_INVERT_X_AXIS && CONFIG_INVERT_Y_AXIS
+// careful! direction pins hardcoded here#if DRIVEBOARD
+// (1<<X_DIRECTION_BIT) | (1<<Y_DIRECTION_BIT) | (1<<Y_DIRECTION_BIT)
+#if CONFIG_INVERT_X_AXIS && CONFIG_INVERT_Y_AXIS && CONFIG_INVERT_Z_AXIS
+  #define INVERT_MASK 56U
+#elif CONFIG_INVERT_X_AXIS && CONFIG_INVERT_Y_AXIS
   #define INVERT_MASK 24U
+#elif CONFIG_INVERT_Y_AXIS && CONFIG_INVERT_Z_AXIS
+  #define INVERT_MASK 48U
+#elif CONFIG_INVERT_X_AXIS && CONFIG_INVERT_Z_AXIS
+  #define INVERT_MASK 40U
 #elif CONFIG_INVERT_X_AXIS
   #define INVERT_MASK 8U
 #elif CONFIG_INVERT_Y_AXIS
   #define INVERT_MASK 16U
+#elif CONFIG_INVERT_Z_AXIS
+  #define INVERT_MASK 32U
 #else
   #define INVERT_MASK 0U
 #endif
+
 
 
 // The temporal resolution of the acceleration management subsystem. Higher number give smoother

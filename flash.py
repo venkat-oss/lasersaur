@@ -65,7 +65,7 @@ GUESS_PPREFIX = "tty.usbmodem"
 def build():
     DEVICE = "atmega328p"
     CLOCK = "16000000"
-    if SERIAL_PORT == "icsp":
+    if SERIAL_PORT == "usbtiny":
         PROGRAMMER = "usbtiny"    # use this for programmer
         SERIAL_OPTION = ""
     else:

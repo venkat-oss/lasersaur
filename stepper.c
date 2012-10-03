@@ -227,6 +227,13 @@ ISR(TIMER1_COMPA_vect) {
       busy = false;
       return;    
     }
+    #ifndef DRIVEBOARD
+      else if (SENSE_POWER_OFF) {
+        stepper_request_stop(STATUS_POWER_OFF);
+        busy = false;
+        return;
+      }
+    #endif
   #endif
   
   // pulse steppers

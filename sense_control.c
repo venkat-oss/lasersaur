@@ -53,7 +53,12 @@ void control_init() {
   AIRGAS_DDR |= (1 << AIR_BIT);  // set as output pin
   AIRGAS_DDR |= (1 << GAS_BIT);  // set as output pin
   control_air(false);
-  control_gas(false); 
+  control_gas(false);
+  #ifndef DRIVEBOARD
+    //// limits overwrite control
+    LIMITS_OVERWRITE_DDR |= 1<<LIMITS_OVERWRITE_BIT; // define as output pin
+    control_limits_overwrite(true); // do not use hardware logic to stop steppers 
+  #endif  
 }
 
 
@@ -80,5 +85,14 @@ void control_gas(bool enable) {
 }
 
 
-
+#ifndef DRIVEBOARD
+  void control_limits_overwrite(bool enable) {
+    if (enable) {
+      // sinking the pin overwrites the limit stop hard logic
+      LIMITS_OVERWRITE_PORT &= ~(1<<LIMITS_OVERWRITE_BIT);
+    } else {
+      LIMITS_OVERWRITE_PORT |= (1<<LIMITS_OVERWRITE_BIT);
+    }
+  }
+#endif
 

@@ -42,9 +42,12 @@
 #define NEXT_ACTION_SET_COORDINATE_OFFSET 5
 #define NEXT_ACTION_AIR_ASSIST_ENABLE 6
 #define NEXT_ACTION_AIR_ASSIST_DISABLE 7
-#define NEXT_ACTION_AUX_ASSIST_ENABLE 8
-#define NEXT_ACTION_AUX_ASSIST_DISABLE 9
-
+#define NEXT_ACTION_AUX1_ASSIST_ENABLE 8
+#define NEXT_ACTION_AUX1_ASSIST_DISABLE 9
+#ifdef DRIVEBOARD
+  #define NEXT_ACTION_AUX2_ASSIST_ENABLE 10
+  #define NEXT_ACTION_AUX2_ASSIST_DISABLE 11
+#endif
 
 #define OFFSET_G54 0
 #define OFFSET_G55 1
@@ -319,10 +322,14 @@ uint8_t gcode_execute_line(char *line) {
         break;
       case 'M':
         switch(int_value) {
-          case 8: next_action = NEXT_ACTION_AIR_ASSIST_ENABLE;break;
-          case 9: next_action = NEXT_ACTION_AIR_ASSIST_DISABLE;break;
-          case 10: next_action = NEXT_ACTION_AUX_ASSIST_ENABLE;break;
-          case 11: next_action = NEXT_ACTION_AUX_ASSIST_DISABLE;break;
+          case 80: next_action = NEXT_ACTION_AIR_ASSIST_ENABLE;break;
+          case 81: next_action = NEXT_ACTION_AIR_ASSIST_DISABLE;break;
+          case 82: next_action = NEXT_ACTION_AUX1_ASSIST_ENABLE;break;
+          case 83: next_action = NEXT_ACTION_AUX1_ASSIST_DISABLE;break;
+          #ifdef DRIVEBOARD
+            case 84: next_action = NEXT_ACTION_AUX2_ASSIST_ENABLE;break;
+            case 85: next_action = NEXT_ACTION_AUX2_ASSIST_DISABLE;break;
+          #endif
           default: FAIL(STATUS_UNSUPPORTED_STATEMENT);
         }            
         break;
@@ -461,12 +468,20 @@ uint8_t gcode_execute_line(char *line) {
     case NEXT_ACTION_AIR_ASSIST_DISABLE:
       planner_control_air_assist_disable();
       break;
-    case NEXT_ACTION_AUX_ASSIST_ENABLE:
-      planner_control_aux_assist_enable();
+    case NEXT_ACTION_AUX1_ASSIST_ENABLE:
+      planner_control_aux1_assist_enable();
       break;
-    case NEXT_ACTION_AUX_ASSIST_DISABLE:
-      planner_control_aux_assist_disable();
-      break;      
+    case NEXT_ACTION_AUX1_ASSIST_DISABLE:
+      planner_control_aux1_assist_disable();
+      break;
+    #ifdef DRIVEBOARD
+      case NEXT_ACTION_AUX2_ASSIST_ENABLE:
+        planner_control_aux2_assist_enable();
+        break;
+      case NEXT_ACTION_AUX2_ASSIST_DISABLE:
+        planner_control_aux2_assist_disable();
+        break;
+    #endif
   }
   
   // As far as the parser is concerned, the position is now == target. In reality the

@@ -28,14 +28,19 @@
 #define TYPE_LINE 0
 #define TYPE_AIR_ASSIST_ENABLE 1
 #define TYPE_AIR_ASSIST_DISABLE 2
-#define TYPE_AUX_ASSIST_ENABLE 3
-#define TYPE_AUX_ASSIST_DISABLE 4
+#define TYPE_AUX1_ASSIST_ENABLE 3
+#define TYPE_AUX1_ASSIST_DISABLE 4
+#define TYPE_AUX2_ASSIST_ENABLE 5
+#define TYPE_AUX2_ASSIST_DISABLE 6
 
 #define planner_control_air_assist_enable() planner_command(TYPE_AIR_ASSIST_ENABLE)
 #define planner_control_air_assist_disable() planner_command(TYPE_AIR_ASSIST_DISABLE)
-#define planner_control_aux_assist_enable() planner_command(TYPE_AUX_ASSIST_ENABLE)
-#define planner_control_aux_assist_disable() planner_command(TYPE_AUX_ASSIST_DISABLE)
-
+#define planner_control_aux1_assist_enable() planner_command(TYPE_AUX1_ASSIST_ENABLE)
+#define planner_control_aux1_assist_disable() planner_command(TYPE_AUX1_ASSIST_DISABLE)
+#ifdef DRIVEBOARD
+  #define planner_control_aux2_assist_enable() planner_command(TYPE_AUX2_ASSIST_ENABLE)
+  #define planner_control_aux2_assist_disable() planner_command(TYPE_AUX2_ASSIST_DISABLE)
+#endif
 
 // This struct is used when buffering the setup for each linear movement "nominal" values are as specified in 
 // the source g-code and may never actually be reached if acceleration management is active.

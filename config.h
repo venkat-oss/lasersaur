@@ -25,8 +25,9 @@
 
 // Version number
 // (must not contain capital letters)
-#define LASAURGRBL_VERSION "12.08ng"
-#define DRIVEBOARD  // use changes for new driveboard hardware
+#define LASAURGRBL_VERSION "12.10"
+// build for new driveboard hardware
+#define DRIVEBOARD
 #define BAUD_RATE 57600
 // #define DEBUG_IGNORE_SENSORS  // set for debugging
 
@@ -50,19 +51,18 @@
 #define SENSE_DDR               DDRD
 #define SENSE_PORT              PORTD
 #define SENSE_PIN               PIND
-#ifdef DRIVEBOARD
-  // D2 is available
-#else
+#ifndef DRIVEBOARD
   #define POWER_BIT             2
 #endif
 #define CHILLER_BIT             3
-#define DOOR_BIT                5
+#define DOOR_BIT                2
 
 #ifdef DRIVEBOARD
   #define ASSIST_DDR            DDRD
   #define ASSIST_PORT           PORTD
   #define AIR_ASSIST_BIT        4
-  #define AUX_ASSIST_BIT        7
+  #define AUX1_ASSIST_BIT       7
+  #define AUX2_ASSIST_BIT       5
 #else
   #define LIMITS_OVERWRITE_DDR  DDRD
   #define LIMITS_OVERWRITE_PORT PORTD
@@ -83,7 +83,7 @@
   #define ASSIST_DDR            DDRC
   #define ASSIST_PORT           PORTC
   #define AIR_ASSIST_BIT        4
-  #define AUX_ASSIST_BIT        5
+  #define AUX1_ASSIST_BIT       5
 #endif
 
 #define STEPPING_DDR            DDRB

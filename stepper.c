@@ -372,17 +372,31 @@ ISR(TIMER1_COMPA_vect) {
       planner_discard_current_block();  
       break;
 
-    case TYPE_AUX_ASSIST_ENABLE:
-      control_aux_assist(true);
+    case TYPE_AUX1_ASSIST_ENABLE:
+      control_aux1_assist(true);
       current_block = NULL;
       planner_discard_current_block();  
       break;
 
-    case TYPE_AUX_ASSIST_DISABLE:
-      control_aux_assist(false);
+    case TYPE_AUX1_ASSIST_DISABLE:
+      control_aux1_assist(false);
       current_block = NULL;
       planner_discard_current_block();  
       break;    
+
+    #ifdef DRIVEBOARD
+      case TYPE_AUX2_ASSIST_ENABLE:
+        control_aux2_assist(true);
+        current_block = NULL;
+        planner_discard_current_block();  
+        break;
+
+      case TYPE_AUX2_ASSIST_DISABLE:
+        control_aux2_assist(false);
+        current_block = NULL;
+        planner_discard_current_block();  
+        break;    
+    #endif
   }
   
   busy = false;

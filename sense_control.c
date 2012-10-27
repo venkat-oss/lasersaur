@@ -50,11 +50,14 @@ void control_init() {
   TCCR0B |= (1 << CS00);    // prescaler to 1, PWMfreq = 16000/(2*256*1) = 31.25kH
   
   //// air and aux assist control
-  ASSIST_DDR |= (1 << AIR_ASSIST_BIT);  // set as output pin
-  ASSIST_DDR |= (1 << AUX_ASSIST_BIT);  // set as output pin
+  ASSIST_DDR |= (1 << AIR_ASSIST_BIT);   // set as output pin
+  ASSIST_DDR |= (1 << AUX1_ASSIST_BIT);  // set as output pin
   control_air_assist(false);
-  control_aux_assist(false);
-  #ifndef DRIVEBOARD
+  control_aux1_assist(false);
+  #ifdef DRIVEBOARD
+    ASSIST_DDR |= (1 << AUX2_ASSIST_BIT);  // set as output pin
+    control_aux2_assist(false);
+  #else  
     //// limits overwrite control
     LIMITS_OVERWRITE_DDR |= 1<<LIMITS_OVERWRITE_BIT; // define as output pin
     control_limits_overwrite(true); // do not use hardware logic to stop steppers 
@@ -76,16 +79,23 @@ void control_air_assist(bool enable) {
   }
 }
 
-void control_aux_assist(bool enable) {
+void control_aux1_assist(bool enable) {
   if (enable) {
-    ASSIST_PORT |= (1 << AUX_ASSIST_BIT);
+    ASSIST_PORT |= (1 << AUX1_ASSIST_BIT);
   } else {
-    ASSIST_PORT &= ~(1 << AUX_ASSIST_BIT);
+    ASSIST_PORT &= ~(1 << AUX1_ASSIST_BIT);
   }  
 }
 
-
-#ifndef DRIVEBOARD
+#ifdef DRIVEBOARD
+  void control_aux2_assist(bool enable) {
+    if (enable) {
+      ASSIST_PORT |= (1 << AUX2_ASSIST_BIT);
+    } else {
+      ASSIST_PORT &= ~(1 << AUX2_ASSIST_BIT);
+    }  
+  }
+#else
   void control_limits_overwrite(bool enable) {
     if (enable) {
       // sinking the pin overwrites the limit stop hard logic

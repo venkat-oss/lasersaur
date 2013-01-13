@@ -40,6 +40,8 @@
   Speed adjustments are made ACCELERATION_TICKS_PER_SECOND times per second.  
 */
 
+#define __DELAY_BACKWARD_COMPATIBLE__  // _delay_us() make backward compatible see delay.h
+  
 #include <math.h>
 #include <stdlib.h>
 #include <util/delay.h>

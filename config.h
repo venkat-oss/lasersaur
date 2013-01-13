@@ -25,7 +25,7 @@
 
 // Version number
 // (must not contain capital letters)
-#define LASAURGRBL_VERSION "12.10"
+#define LASAURGRBL_VERSION "13.01"
 // build for new driveboard hardware
 #define DRIVEBOARD
 #define BAUD_RATE 57600

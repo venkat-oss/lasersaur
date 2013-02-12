@@ -25,7 +25,7 @@
 
 // Version number
 // (must not contain capital letters)
-#define LASAURGRBL_VERSION "13.01"
+#define LASAURGRBL_VERSION "13.02"
 // build for new driveboard hardware
 #define DRIVEBOARD
 #define BAUD_RATE 57600
@@ -38,7 +38,7 @@
 #define CONFIG_PULSE_MICROSECONDS 5
 #define CONFIG_FEEDRATE 15000.0 // in millimeters per minute
 #define CONFIG_SEEKRATE 5000.0
-#define CONFIG_ACCELERATION 2400000.0 // mm/min^2, typically 1000000-8000000, divide by (60*60) to get mm/sec^2
+#define CONFIG_ACCELERATION 1400000.0 // mm/min^2, typically 1000000-8000000, divide by (60*60) to get mm/sec^2
 #define CONFIG_JUNCTION_DEVIATION 0.01 // mm
 #define CONFIG_X_ORIGIN_OFFSET 5.0  // mm, x-offset of table origin from physical home
 #define CONFIG_Y_ORIGIN_OFFSET 5.0  // mm, y-offset of table origin from physical home
@@ -47,6 +47,15 @@
 #define CONFIG_INVERT_Y_AXIS 1  // 0 is regular, 1 inverts the y direction
 #define CONFIG_INVERT_Z_AXIS 1  // 0 is regular, 1 inverts the y direction
 
+// beam dynamics configuration
+// With these setting the laser intensity can be dynamically adapted to slowdowns
+// resulting from de/acceleration phases. The stepper driver code looks at the ratio
+// of actual to nominal speed and uses this to also reduce the nominal laser intensity.
+// The diminution profile can also be fine-tuned (as a linear mapping is too aggressive).
+// It uses this function: y=x^2*d+(1-d) where d is the diminution (0.0 to 1.0).
+// 0.0 is no diminution and anything > 0.7 is more aggresive than linear.
+#define CONFIG_BEAM_DIMINUTION 0
+// #define CONFIG_BEAM_DIMINUTION 0.3
 
 #define SENSE_DDR               DDRD
 #define SENSE_PORT              PORTD

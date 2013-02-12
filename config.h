@@ -38,7 +38,7 @@
 #define CONFIG_PULSE_MICROSECONDS 5
 #define CONFIG_FEEDRATE 15000.0 // in millimeters per minute
 #define CONFIG_SEEKRATE 5000.0
-#define CONFIG_ACCELERATION 1400000.0 // mm/min^2, typically 1000000-8000000, divide by (60*60) to get mm/sec^2
+#define CONFIG_ACCELERATION 1800000.0 // mm/min^2, typically 1000000-8000000, divide by (60*60) to get mm/sec^2
 #define CONFIG_JUNCTION_DEVIATION 0.01 // mm
 #define CONFIG_X_ORIGIN_OFFSET 5.0  // mm, x-offset of table origin from physical home
 #define CONFIG_Y_ORIGIN_OFFSET 5.0  // mm, y-offset of table origin from physical home

@@ -53,9 +53,9 @@
 // of actual to nominal speed and uses this to also reduce the nominal laser intensity.
 // The diminution profile can also be fine-tuned (as a linear mapping is too aggressive).
 // It uses this function: y=x^2*d+(1-d) where d is the diminution (0.0 to 1.0).
-// 0.0 is no diminution and anything > 0.7 is more aggresive than linear.
-#define CONFIG_BEAM_DIMINUTION 0
-// #define CONFIG_BEAM_DIMINUTION 0.3
+// 0 is no diminution and anything > 0.7 is more aggresive than linear.
+#define CONFIG_BEAM_DIMINUTION 0.4
+#define CONFIG_LASER_MIN_INTENSITY 40  // min intensity at which the laser fires, 0-255 
 
 #define SENSE_DDR               DDRD
 #define SENSE_PORT              PORTD

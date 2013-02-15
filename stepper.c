@@ -470,9 +470,9 @@ static void adjust_speed( uint32_t steps_per_minute ) {
     // We could use slowdown_pct directly but this tends to be too aggressive and leads
     // to corners getting too little power (opposite problem). To get a sense of the
     // dynamic factor simply graph y=x^2*d+(1-d) for d in [0.0, 1.0]
-    // double dynamic_factor = slowdown_pct*slowdown_pct*(CONFIG_BEAM_DIMINUTION)+(1-CONFIG_BEAM_DIMINUTION);
-    double dynamic_factor = slowdown_pct*(CONFIG_BEAM_DIMINUTION)+(1-CONFIG_BEAM_DIMINUTION);
-    int s_value = max(current_block->nominal_laser_intensity * dynamic_factor, CONFIG_LASER_MIN_INTENSITY);
+    double dynamic_factor = slowdown_pct*slowdown_pct*(CONFIG_BEAM_DIMINUTION)+(1-CONFIG_BEAM_DIMINUTION);
+    // double dynamic_factor = slowdown_pct*(CONFIG_BEAM_DIMINUTION)+(1-CONFIG_BEAM_DIMINUTION);
+    int s_value = max(current_block->nominal_laser_intensity*dynamic_factor, CONFIG_LASER_MIN_INTENSITY);
     control_laser_intensity(min(s_value, current_block->nominal_laser_intensity));
   } else {
     // run at constant intensity
@@ -552,7 +552,7 @@ static void homing_cycle(bool x_axis, bool y_axis, bool z_axis, bool reverse_dir
 }
 
 static void approach_limit_switch(bool x, bool y, bool z) {
-  homing_cycle(x, y, z,false, 1000);
+  homing_cycle(x, y, z,false, 600);
 }
 
 static void leave_limit_switch(bool x, bool y, bool z) {

@@ -462,22 +462,13 @@ static uint32_t config_step_timer(uint32_t cycles) {
 
 
 static void adjust_speed( uint32_t steps_per_minute ) {
+  // steps_per_minute is typicaly just adjusted_rate
   if (steps_per_minute < MINIMUM_STEPS_PER_MINUTE) { steps_per_minute = MINIMUM_STEPS_PER_MINUTE; }
   cycles_per_step_event = config_step_timer((CYCLES_PER_MICROSECOND*1000000*60)/steps_per_minute);
-  if (CONFIG_BEAM_DIMINUTION) {
-    double slowdown_pct = steps_per_minute/current_block->nominal_rate;
-    // using y=x^2*d+(1-d) to soften the diminuation (d is CONFIG_BEAM_DIMINUTION).
-    // We could use slowdown_pct directly but this tends to be too aggressive and leads
-    // to corners getting too little power (opposite problem). To get a sense of the
-    // dynamic factor simply graph y=x^2*d+(1-d) for d in [0.0, 1.0]
-    double dynamic_factor = slowdown_pct*slowdown_pct*(CONFIG_BEAM_DIMINUTION)+(1-CONFIG_BEAM_DIMINUTION);
-    // double dynamic_factor = slowdown_pct*(CONFIG_BEAM_DIMINUTION)+(1-CONFIG_BEAM_DIMINUTION);
-    int s_value = max(current_block->nominal_laser_intensity*dynamic_factor, CONFIG_LASER_MIN_INTENSITY);
-    control_laser_intensity(min(s_value, current_block->nominal_laser_intensity));
-  } else {
-    // run at constant intensity
-    control_laser_intensity(current_block->nominal_laser_intensity);
-  }
+  // beam dynamics
+  uint8_t adjusted_intensity = current_block->nominal_laser_intensity * 
+                               ((float)steps_per_minute/(float)current_block->nominal_rate);
+  control_laser_intensity(max(adjusted_intensity, 1));
 }
 
 

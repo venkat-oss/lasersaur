@@ -38,16 +38,19 @@ void sense_init() {
 
 void control_init() {
   //// laser control
-  // Setup Timer0 for a 31.25kH "phase correct PWM" wave (assuming a 16Mhz clock)
+  // Setup Timer0 for a 488.28125Hz "phase correct PWM" wave (assuming a 16Mhz clock)
   // Timer0 can pwm either PD5 (OC0B) or PD6 (OC0A), we use PD6
   // TCCR0A and TCCR0B are the registers to setup Timer0
   // see chapter "8-bit Timer/Counter0 with PWM" in Atmga328 specs
   // OCR0A sets the duty cycle 0-255 corresponding to 0-100%
+  // also see: http://arduino.cc/en/Tutorial/SecretsOfArduinoPWM
   DDRD |= (1 << DDD6);      // set PD6 as an output
   OCR0A = 0;              // set PWM to a 0% duty cycle
   TCCR0A |= (1 << COM0A1);  // set non-inverting mode on OC0A, PD6, Arduino pin 6
   TCCR0A |= (1 << WGM00);   // set phase correct PWM mode, has half the freq of fast PWM
-  TCCR0B |= (1 << CS00);    // prescaler to 1, PWMfreq = 16000/(2*256*1) = 31.25kH
+  // TCCR0B |= (1 << CS00);    // prescaler to 1, PWMfreq = 16000/(2*256*1) = 31.25kHz
+  // TCCR0B = _BV(CS21);;    // prescaler to 1, PWMfreq = 16000/(2*256*8) = 3.90625kHz
+  TCCR0B = _BV(CS22);;    // prescaler to 1, PWMfreq = 16000/(2*256*64) = 0.48828125kHz
   
   //// air and aux assist control
   ASSIST_DDR |= (1 << AIR_ASSIST_BIT);   // set as output pin

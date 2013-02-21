@@ -25,7 +25,7 @@
 
 // Version number
 // (must not contain capital letters)
-#define LASAURGRBL_VERSION "13.02b"
+#define LASAURGRBL_VERSION "13.02e"
 // build for new driveboard hardware
 #define DRIVEBOARD
 #define BAUD_RATE 57600
@@ -47,15 +47,6 @@
 #define CONFIG_INVERT_Y_AXIS 1  // 0 is regular, 1 inverts the y direction
 #define CONFIG_INVERT_Z_AXIS 1  // 0 is regular, 1 inverts the y direction
 
-// beam dynamics configuration
-// With these setting the laser intensity can be dynamically adapted to slowdowns
-// resulting from de/acceleration phases. The stepper driver code looks at the ratio
-// of actual to nominal speed and uses this to also reduce the nominal laser intensity.
-// The diminution profile can also be fine-tuned (as a linear mapping is too aggressive).
-// It uses this function: y=x^2*d+(1-d) where d is the diminution (0.0 to 1.0).
-// 0 is no diminution and anything > 0.7 is more aggresive than linear.
-#define CONFIG_BEAM_DIMINUTION 0.2
-#define CONFIG_LASER_MIN_INTENSITY 40  // min intensity at which the laser fires, 0-255 
 
 #define SENSE_DDR               DDRD
 #define SENSE_PORT              PORTD

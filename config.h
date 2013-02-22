@@ -25,7 +25,9 @@
 
 // Version number
 // (must not contain capital letters)
-#define LASAURGRBL_VERSION "12.08f"
+#define LASAURGRBL_VERSION "13.02e"
+// build for new driveboard hardware
+#define DRIVEBOARD
 #define BAUD_RATE 57600
 // #define DEBUG_IGNORE_SENSORS  // set for debugging
 
@@ -36,25 +38,36 @@
 #define CONFIG_PULSE_MICROSECONDS 5
 #define CONFIG_FEEDRATE 15000.0 // in millimeters per minute
 #define CONFIG_SEEKRATE 5000.0
-#define CONFIG_ACCELERATION 2400000.0 // mm/min^2, typically 1000000-8000000, divide by (60*60) to get mm/sec^2
+#define CONFIG_ACCELERATION 1800000.0 // mm/min^2, typically 1000000-8000000, divide by (60*60) to get mm/sec^2
 #define CONFIG_JUNCTION_DEVIATION 0.01 // mm
 #define CONFIG_X_ORIGIN_OFFSET 5.0  // mm, x-offset of table origin from physical home
 #define CONFIG_Y_ORIGIN_OFFSET 5.0  // mm, y-offset of table origin from physical home
 #define CONFIG_Z_ORIGIN_OFFSET 0.0   // mm, z-offset of table origin from physical home
 #define CONFIG_INVERT_X_AXIS 1  // 0 is regular, 1 inverts the x direction
 #define CONFIG_INVERT_Y_AXIS 1  // 0 is regular, 1 inverts the y direction
+#define CONFIG_INVERT_Z_AXIS 1  // 0 is regular, 1 inverts the y direction
 
-
-#define LIMITS_OVERWRITE_DDR     DDRD
-#define LIMITS_OVERWRITE_PORT    PORTD
-#define LIMITS_OVERWRITE_BIT     7
 
 #define SENSE_DDR               DDRD
 #define SENSE_PORT              PORTD
 #define SENSE_PIN               PIND
-#define POWER_BIT               2
+#ifndef DRIVEBOARD
+  #define POWER_BIT             2
+#endif
 #define CHILLER_BIT             3
-#define DOOR_BIT                5
+#define DOOR_BIT                2
+
+#ifdef DRIVEBOARD
+  #define ASSIST_DDR            DDRD
+  #define ASSIST_PORT           PORTD
+  #define AIR_ASSIST_BIT        4
+  #define AUX1_ASSIST_BIT       7
+  #define AUX2_ASSIST_BIT       5
+#else
+  #define LIMITS_OVERWRITE_DDR  DDRD
+  #define LIMITS_OVERWRITE_PORT PORTD
+  #define LIMITS_OVERWRITE_BIT  7  
+#endif
   
 #define LIMIT_DDR               DDRC
 #define LIMIT_PORT              PORTC
@@ -63,11 +76,15 @@
 #define X2_LIMIT_BIT            1
 #define Y1_LIMIT_BIT            2
 #define Y2_LIMIT_BIT            3
-
-#define AIRGAS_DDR              DDRC
-#define AIRGAS_PORT             PORTC
-#define AIR_BIT                 4
-#define GAS_BIT                 5
+#ifdef DRIVEBOARD
+  #define Z1_LIMIT_BIT          4
+  #define Z2_LIMIT_BIT          5
+#else
+  #define ASSIST_DDR            DDRC
+  #define ASSIST_PORT           PORTC
+  #define AIR_ASSIST_BIT        4
+  #define AUX1_ASSIST_BIT       5
+#endif
 
 #define STEPPING_DDR            DDRB
 #define STEPPING_PORT           PORTB
@@ -80,24 +97,37 @@
 
 
 
-
-#define SENSE_MASK ((1<<POWER_BIT)|(1<<CHILLER_BIT)|(1<<DOOR_BIT))
-#define LIMIT_MASK ((1<<X1_LIMIT_BIT)|(1<<X2_LIMIT_BIT)|(1<<Y1_LIMIT_BIT)|(1<<Y2_LIMIT_BIT))
+#ifdef DRIVEBOARD
+  #define SENSE_MASK ((1<<CHILLER_BIT)|(1<<DOOR_BIT))
+  #define LIMIT_MASK ((1<<X1_LIMIT_BIT)|(1<<X2_LIMIT_BIT)|(1<<Y1_LIMIT_BIT)|(1<<Y2_LIMIT_BIT)|(1<<Z1_LIMIT_BIT)|(1<<Z2_LIMIT_BIT))
+#else
+  #define SENSE_MASK ((1<<POWER_BIT)|(1<<CHILLER_BIT)|(1<<DOOR_BIT))
+  #define LIMIT_MASK ((1<<X1_LIMIT_BIT)|(1<<X2_LIMIT_BIT)|(1<<Y1_LIMIT_BIT)|(1<<Y2_LIMIT_BIT))
+#endif
 #define STEPPING_MASK ((1<<X_STEP_BIT)|(1<<Y_STEP_BIT)|(1<<Z_STEP_BIT))
 #define DIRECTION_MASK ((1<<X_DIRECTION_BIT)|(1<<Y_DIRECTION_BIT)|(1<<Z_DIRECTION_BIT))
 
 // figure out INVERT_MASK
-// careful! direction pins hardcoded here
-// (1<<X_DIRECTION_BIT) | (1<<Y_DIRECTION_BIT)
-#if CONFIG_INVERT_X_AXIS && CONFIG_INVERT_Y_AXIS
+// careful! direction pins hardcoded here#if DRIVEBOARD
+// (1<<X_DIRECTION_BIT) | (1<<Y_DIRECTION_BIT) | (1<<Y_DIRECTION_BIT)
+#if CONFIG_INVERT_X_AXIS && CONFIG_INVERT_Y_AXIS && CONFIG_INVERT_Z_AXIS
+  #define INVERT_MASK 56U
+#elif CONFIG_INVERT_X_AXIS && CONFIG_INVERT_Y_AXIS
   #define INVERT_MASK 24U
+#elif CONFIG_INVERT_Y_AXIS && CONFIG_INVERT_Z_AXIS
+  #define INVERT_MASK 48U
+#elif CONFIG_INVERT_X_AXIS && CONFIG_INVERT_Z_AXIS
+  #define INVERT_MASK 40U
 #elif CONFIG_INVERT_X_AXIS
   #define INVERT_MASK 8U
 #elif CONFIG_INVERT_Y_AXIS
   #define INVERT_MASK 16U
+#elif CONFIG_INVERT_Z_AXIS
+  #define INVERT_MASK 32U
 #else
   #define INVERT_MASK 0U
 #endif
+
 
 
 // The temporal resolution of the acceleration management subsystem. Higher number give smoother

@@ -56,7 +56,7 @@
 
 
 #define CYCLES_PER_MICROSECOND (F_CPU/1000000)  //16000000/1000000 = 16
-#define CYCLES_PER_ACCELERATION_TICK (F_CPU/ACCELERATION_TICKS_PER_SECOND)  // 24MHz/100 = 240000
+#define CYCLES_PER_ACCELERATION_TICK (F_CPU/ACCELERATION_TICKS_PER_SECOND)  // 16MHz/100 = 160000
 
 
 static int32_t stepper_position[3];  // real-time position in absolute steps
@@ -228,11 +228,14 @@ ISR(TIMER1_COMPA_vect) {
       stepper_request_stop(STATUS_LIMIT_HIT);
       busy = false;
       return;    
-    } else if (SENSE_POWER_OFF) {
-      stepper_request_stop(STATUS_POWER_OFF);
-      busy = false;
-      return;    
     }
+    #ifndef DRIVEBOARD
+      else if (SENSE_POWER_OFF) {
+        stepper_request_stop(STATUS_POWER_OFF);
+        busy = false;
+        return;
+      }
+    #endif
   #endif
   
   // pulse steppers
@@ -359,24 +362,43 @@ ISR(TIMER1_COMPA_vect) {
     
       break; 
 
-    case TYPE_AIRGAS_DISABLE:
-      control_air(false);
-      control_gas(false);
+    case TYPE_AIR_ASSIST_ENABLE:
+      control_air_assist(true);
       current_block = NULL;
       planner_discard_current_block();  
       break;
 
-    case TYPE_AIR_ENABLE:
-      control_air(true);
+    case TYPE_AIR_ASSIST_DISABLE:
+      control_air_assist(false);
       current_block = NULL;
       planner_discard_current_block();  
       break;
 
-    case TYPE_GAS_ENABLE:
-      control_gas(true);
+    case TYPE_AUX1_ASSIST_ENABLE:
+      control_aux1_assist(true);
       current_block = NULL;
       planner_discard_current_block();  
-      break;      
+      break;
+
+    case TYPE_AUX1_ASSIST_DISABLE:
+      control_aux1_assist(false);
+      current_block = NULL;
+      planner_discard_current_block();  
+      break;    
+
+    #ifdef DRIVEBOARD
+      case TYPE_AUX2_ASSIST_ENABLE:
+        control_aux2_assist(true);
+        current_block = NULL;
+        planner_discard_current_block();  
+        break;
+
+      case TYPE_AUX2_ASSIST_DISABLE:
+        control_aux2_assist(false);
+        current_block = NULL;
+        planner_discard_current_block();  
+        break;    
+    #endif
   }
   
   busy = false;
@@ -440,11 +462,13 @@ static uint32_t config_step_timer(uint32_t cycles) {
 
 
 static void adjust_speed( uint32_t steps_per_minute ) {
+  // steps_per_minute is typicaly just adjusted_rate
   if (steps_per_minute < MINIMUM_STEPS_PER_MINUTE) { steps_per_minute = MINIMUM_STEPS_PER_MINUTE; }
   cycles_per_step_event = config_step_timer((CYCLES_PER_MICROSECOND*1000000*60)/steps_per_minute);
-
-  // run at constant intensity for now
-  control_laser_intensity(current_block->nominal_laser_intensity);
+  // beam dynamics
+  uint8_t adjusted_intensity = current_block->nominal_laser_intensity * 
+                               ((float)steps_per_minute/(float)current_block->nominal_rate);
+  control_laser_intensity(max(adjusted_intensity, 1));
 }
 
 
@@ -519,7 +543,7 @@ static void homing_cycle(bool x_axis, bool y_axis, bool z_axis, bool reverse_dir
 }
 
 static void approach_limit_switch(bool x, bool y, bool z) {
-  homing_cycle(x, y, z,false, 1000);
+  homing_cycle(x, y, z,false, 600);
 }
 
 static void leave_limit_switch(bool x, bool y, bool z) {

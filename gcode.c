@@ -40,10 +40,14 @@
 #define NEXT_ACTION_DWELL 3
 #define NEXT_ACTION_HOMING_CYCLE 4
 #define NEXT_ACTION_SET_COORDINATE_OFFSET 5
-#define NEXT_ACTION_AIRGAS_DISABLE 6
-#define NEXT_ACTION_AIR_ENABLE 7
-#define NEXT_ACTION_GAS_ENABLE 8
-
+#define NEXT_ACTION_AIR_ASSIST_ENABLE 6
+#define NEXT_ACTION_AIR_ASSIST_DISABLE 7
+#define NEXT_ACTION_AUX1_ASSIST_ENABLE 8
+#define NEXT_ACTION_AUX1_ASSIST_DISABLE 9
+#ifdef DRIVEBOARD
+  #define NEXT_ACTION_AUX2_ASSIST_ENABLE 10
+  #define NEXT_ACTION_AUX2_ASSIST_DISABLE 11
+#endif
 
 #define OFFSET_G54 0
 #define OFFSET_G55 1
@@ -239,10 +243,12 @@ void gcode_process_line() {
       if (SENSE_CHILLER_OFF) {
         printString("C");  // Warning: Chiller is off
       }
-      // power
-      if (SENSE_POWER_OFF) {
-        printString("P");  // Power Off
-      }    
+      #ifndef DRIVEBOARD
+        // power
+        if (SENSE_POWER_OFF) {
+          printString("P"); // Power Off
+        } 
+      #endif
       // limit
       if (SENSE_LIMITS) {
         if (SENSE_X1_LIMIT) {
@@ -316,9 +322,14 @@ uint8_t gcode_execute_line(char *line) {
         break;
       case 'M':
         switch(int_value) {
-          case 7: next_action = NEXT_ACTION_AIR_ENABLE;break;
-          case 8: next_action = NEXT_ACTION_GAS_ENABLE;break;
-          case 9: next_action = NEXT_ACTION_AIRGAS_DISABLE;break;
+          case 80: next_action = NEXT_ACTION_AIR_ASSIST_ENABLE;break;
+          case 81: next_action = NEXT_ACTION_AIR_ASSIST_DISABLE;break;
+          case 82: next_action = NEXT_ACTION_AUX1_ASSIST_ENABLE;break;
+          case 83: next_action = NEXT_ACTION_AUX1_ASSIST_DISABLE;break;
+          #ifdef DRIVEBOARD
+            case 84: next_action = NEXT_ACTION_AUX2_ASSIST_ENABLE;break;
+            case 85: next_action = NEXT_ACTION_AUX2_ASSIST_DISABLE;break;
+          #endif
           default: FAIL(STATUS_UNSUPPORTED_STATEMENT);
         }            
         break;
@@ -451,15 +462,26 @@ uint8_t gcode_execute_line(char *line) {
         }
       }
       break;
-    case NEXT_ACTION_AIRGAS_DISABLE:
-      planner_control_airgas_disable();
+    case NEXT_ACTION_AIR_ASSIST_ENABLE:
+      planner_control_air_assist_enable();
       break;
-    case NEXT_ACTION_AIR_ENABLE:
-      planner_control_air_enable();
+    case NEXT_ACTION_AIR_ASSIST_DISABLE:
+      planner_control_air_assist_disable();
       break;
-    case NEXT_ACTION_GAS_ENABLE:
-      planner_control_gas_enable();
+    case NEXT_ACTION_AUX1_ASSIST_ENABLE:
+      planner_control_aux1_assist_enable();
       break;
+    case NEXT_ACTION_AUX1_ASSIST_DISABLE:
+      planner_control_aux1_assist_disable();
+      break;
+    #ifdef DRIVEBOARD
+      case NEXT_ACTION_AUX2_ASSIST_ENABLE:
+        planner_control_aux2_assist_enable();
+        break;
+      case NEXT_ACTION_AUX2_ASSIST_DISABLE:
+        planner_control_aux2_assist_disable();
+        break;
+    #endif
   }
   
   // As far as the parser is concerned, the position is now == target. In reality the

@@ -50,7 +50,8 @@ void control_init() {
   TCCR0A |= (1 << WGM00);   // set phase correct PWM mode, has half the freq of fast PWM
   // TCCR0B |= (1 << CS00);    // prescaler to 1, PWMfreq = 16000/(2*256*1) = 31.25kHz
   // TCCR0B = _BV(CS21);;    // prescaler to 1, PWMfreq = 16000/(2*256*8) = 3.90625kHz
-  TCCR0B = _BV(CS22);;    // prescaler to 1, PWMfreq = 16000/(2*256*64) = 0.48828125kHz
+  // TCCR0B = _BV(CS21) | _BV(CS20);    // prescaler to 1, PWMfreq = 16000/(2*256*32) = 0.9765625kHz
+  TCCR0B = _BV(CS22);    // prescaler to 1, PWMfreq = 16000/(2*256*64) = 0.48828125kHz
   
   //// air and aux assist control
   ASSIST_DDR |= (1 << AIR_ASSIST_BIT);   // set as output pin

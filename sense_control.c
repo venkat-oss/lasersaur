@@ -46,13 +46,17 @@ void control_init() {
   // also see: http://arduino.cc/en/Tutorial/SecretsOfArduinoPWM
   DDRD |= (1 << DDD6);      // set PD6 as an output
   OCR0A = 0;              // set PWM to a 0% duty cycle
-  TCCR0A |= (1 << COM0A1);  // set non-inverting mode on OC0A, PD6, Arduino pin 6
-  TCCR0A |= (1 << WGM00);   // set phase correct PWM mode, has half the freq of fast PWM
-  // TCCR0B |= (1 << CS00);    // prescaler to 1, PWMfreq = 16000/(2*256*1) = 31.25kHz
-  // TCCR0B = _BV(CS21);;    // prescaler to 1, PWMfreq = 16000/(2*256*8) = 3.90625kHz
-  // TCCR0B = _BV(CS21) | _BV(CS20);    // prescaler to 1, PWMfreq = 16000/(2*256*32) = 0.9765625kHz
-  TCCR0B = _BV(CS22);    // prescaler to 1, PWMfreq = 16000/(2*256*64) = 0.48828125kHz
-  
+  TCCR0A = _BV(COM0A1) | _BV(WGM00);   // phase correct PWM mode
+  // TCCR0A = _BV(COM0A1) | _BV(WGM01) | _BV(WGM00);  // fast PWM mode
+  // prescaler: PWMfreq = 16000/(2*256*prescaler)
+  // TCCR0B = _BV(CS00);                // 1 => 31.3kHz
+  // TCCR0B = _BV(CS01);                // 8 => 3.9kHz
+  TCCR0B = _BV(CS01) | _BV(CS00);    // 64 => 489Hz
+  // TCCR0B = _BV(CS02);                // 256 => 122Hz
+  // TCCR0B = _BV(CS02) | _BV(CS00);    // 1024 => 31Hz
+  // NOTES:
+  // PPI = PWMfreq/(feedrate/25.4/60)
+
   //// air and aux assist control
   ASSIST_DDR |= (1 << AIR_ASSIST_BIT);   // set as output pin
   ASSIST_DDR |= (1 << AUX1_ASSIST_BIT);  // set as output pin

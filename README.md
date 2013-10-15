@@ -1,3 +1,6 @@
+### !!! Deprecated Repository !!!
+### Firmware is now part of [LasaurApp](https://github.com/nortd/LasaurApp)
+
 
 Lasersaur - Open Source Laser cutter
 -------------------------------------
